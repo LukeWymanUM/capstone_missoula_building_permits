@@ -1,0 +1,4 @@
+What question(s) are you trying to answer? What problem are you trying to solve?
+
+
+Where does the data live currently? What is the source? Describe the data itself (structure, rows/columns as appropriate, etc.).

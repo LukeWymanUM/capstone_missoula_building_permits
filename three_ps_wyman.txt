@@ -6,10 +6,10 @@ Plans: What do you intend to accomplish between now and next week’s post?
 Hours: How many hours did you spend working on your Capstone since last week’s post?
 
 1/28/25
-Progress:
-Problem:
-Plans:
-Hours:
+Progress: Meeting set up with the Missoula Development team on 1/30. Had a meeting with Andrew to discuss the project in more detail.
+Problem: No problems at the moment. I will find out more on 1/30 for what the project entails.
+Plans: I have a meeting with the team on 1/30. From here, I hope to have a cadence for updating the team with progress. I plan to have a better understanding of the requirements for a successful project. I would like to get all set up with all of my access requests to their database as well as have any licenses applied (PowerBI). I would like to have a timeline set up as well.
+Hours: 3
 
 2/4/25
 Progress:

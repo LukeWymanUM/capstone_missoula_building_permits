@@ -1,23 +1,36 @@
 What question(s) are you trying to answer? What problem are you trying to solve?
-
+There are a few questions that we are trying to answer in this project.
+  * How can we make building permit data more transparent and accessible to the public?
+  * What is the best way to engineer a pipeline from the SQL database to a user-friendly, informative dashboard?
+  * What key metrics or insights about building permits do the public and stakeholders want to track?
+The core problem that we are trying to solve is the lack of accessible and automated reporting on building permit activity. Currently, reporting is done either manually, or not at all, and is difficult to access. The goal is to streamline the process, building an automated, sustainable platform for users to view metrics and statuses that requires minimal maintenance.
 
 Where does the data live currently? What is the source? Describe the data itself (structure, rows/columns as appropriate, etc.).
-
+The data currently resides in the Missoula Development Department’s SQL database, which serves as the primary source. This database likely holds detailed records of building permit activity.
 
 How will you obtain the data? What are the tools and process you imagine?
+To obtain the data, I would securely connect to the SQL database using tools like Python with SQLAlchemy or an ETL platform such as Apache Airflow. I’d write and test SQL queries to extract relevant permit data, ensuring performance and accuracy, and transform it using Python (pandas or dask) to clean and prepare it for reporting. The processed data would then be loaded into a public-facing database or directly integrated with a dashboard built using Power BI. This entire pipeline would be automated using scheduling tools like Apache Airflow or cron jobs to ensure consistency and minimize manual intervention.
 
 What do you expect to have to do to the data to make it usable?
+To make the data usable, I would need to clean it by handling missing or inconsistent values, standardizing formats (e.g., dates, addresses), and ensuring key fields like permit IDs are unique. I would normalize and join tables from the database to create a comprehensive dataset, aggregating data where needed (e.g., counts of permits by type or status). Additional transformations might include calculating derived metrics (e.g., approval rates or average processing times) and mapping categorical data into user-friendly labels. The data would also need to be validated for accuracy and filtered to exclude sensitive or irrelevant information. Finally, I’d structure it in a format optimized for dashboard queries, such as pre-aggregated tables or time-series datasets.
 
 How will you bring together multiple datasets to reveal insights, create value, etc.?
+We could add zoning information, GIS data, and inspection results, to provide deeper context. For example, combining permit data with zoning classifications could reveal trends in development activity by zone, while GIS data could visualize permit locations on a map. Adding inspection results might highlight bottlenecks or areas where there are commonly delays in the approval process.  
 
 Where will the data live after you have processed it?
+After processing, the data will live in a public-facing database or cloud storage solution optimized for dashboard queries, such as PostgreSQL, Google BigQuery, or Amazon RDS. This database will store cleaned and transformed datasets in a structure tailored for the dashboard, with pre-aggregated tables or views for faster performance.
 
 How will you communicate or share the data you have acquired/processed? Describe the tool, interface, etc., and what the pipeline is for getting the data from your storage source to the user interface?
+The data will be communicated through a public-facing dashboard built using Power BI. The dashboard will connect directly to the processed data in the storage source (e.g., PostgreSQL or Google BigQuery) via secure APIs or database connections. The pipeline will automate data extraction, transformation, and loading (ETL), ensuring the dashboard always reflects up-to-date information through scheduled refreshes or real-time queries. The interface will be user-friendly, featuring visualizations like maps, charts, and tables, allowing users to explore permit data interactively and gain actionable insights.
 
 What parts of this process will be manual vs. automated? How will you automate it as much as possible?
+The process will be mostly automated, with scheduled ETL pipelines handling data extraction, transformation, and loading. Error logs and monitoring tools will automate issue detection, minimizing manual intervention. Manual tasks will include initial setup, occasional query optimization, and addressing pipeline errors flagged by the logs.
 
 How will you determine that you are obtaining/sharing accurate data and results? What is your review and evaluation process?
+To ensure accuracy, I’ll implement spot data checks at key points in the ETL process, comparing sample data against the source for consistency. Any discrepancies will be flagged for review, and adjustments will be made as needed. This will help maintain reliable data without excessive manual effort.
 
 What opportunities exist to expand or replicate what you are doing? What challenges will there be to doing that and how will you overcome them?
+Opportunities to expand include adding more data sources, such as historical permit data, city planning reports, or community feedback, to provide a richer view of building activity. Replication could occur in other municipalities or departments that need similar transparency and reporting tools. Challenges may include varying data structures across locations or jurisdictions, and ensuring consistent data quality. 
 
 Will this system be sustained over time? How will you make sure it will continue to function if you are no longer involved?
+o ensure continued functionality, I will document the entire process, including the ETL pipeline, dashboard setup, and data validation steps. Additionally, I’ll establish clear workflows for monitoring and troubleshooting, along with automated alerts for any issues. Knowledge transfer to the team will include training on how to manage the system, update queries, and handle data source changes. This will ensure the system remains functional and can be easily maintained without my direct involvement.

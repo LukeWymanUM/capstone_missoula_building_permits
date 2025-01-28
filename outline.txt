@@ -2,3 +2,22 @@ What question(s) are you trying to answer? What problem are you trying to solve?
 
 
 Where does the data live currently? What is the source? Describe the data itself (structure, rows/columns as appropriate, etc.).
+
+
+How will you obtain the data? What are the tools and process you imagine?
+
+What do you expect to have to do to the data to make it usable?
+
+How will you bring together multiple datasets to reveal insights, create value, etc.?
+
+Where will the data live after you have processed it?
+
+How will you communicate or share the data you have acquired/processed? Describe the tool, interface, etc., and what the pipeline is for getting the data from your storage source to the user interface?
+
+What parts of this process will be manual vs. automated? How will you automate it as much as possible?
+
+How will you determine that you are obtaining/sharing accurate data and results? What is your review and evaluation process?
+
+What opportunities exist to expand or replicate what you are doing? What challenges will there be to doing that and how will you overcome them?
+
+Will this system be sustained over time? How will you make sure it will continue to function if you are no longer involved?

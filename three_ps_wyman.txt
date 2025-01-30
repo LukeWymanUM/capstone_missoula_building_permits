@@ -1,96 +1,129 @@
 Luke Wyman
-
+------------------------------------------------------------
 Progress: What have you accomplished since last week’s post?
 Problems: What are you stuck on or struggling with?
 Plans: What do you intend to accomplish between now and next week’s post?
 Hours: How many hours did you spend working on your Capstone since last week’s post?
+------------------------------------------------------------
 
-1/28/25
+---02/04/25---
+Progress:
+Problem:
+Plans:
+Hours:
+
+------------------------------------------------------------
+
+---01/28/25---
 Progress: Meeting set up with the Missoula Development team on 1/30. Had a meeting with Andrew to discuss the project in more detail.
 Problem: No problems at the moment. I will find out more on 1/30 for what the project entails.
 Plans: I have a meeting with the team on 1/30. From here, I hope to have a cadence for updating the team with progress. I plan to have a better understanding of the requirements for a successful project. I would like to get all set up with all of my access requests to their database as well as have any licenses applied (PowerBI). I would like to have a timeline set up as well.
-Hours: 3
+Hours: 3 Hours
 
-2/4/25
+------------------------------------------------------------
+END - SEE MOST RECENT ENTRY AT TOP
+------------------------------------------------------------
+
+---02/11/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-2/11/25
+------------------------------------------------------------
+
+---02/18/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-2/18/25
+------------------------------------------------------------
+
+---02/25/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-2/25/25
+------------------------------------------------------------
+
+---03/04/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-3/4/25
+------------------------------------------------------------
+
+---03/11/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-3/11/25
+------------------------------------------------------------
+
+---03/18/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-3/18/25
+------------------------------------------------------------
+
+---03/25/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-3/25/25
+------------------------------------------------------------
+
+---04/01/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-4/1/25
+------------------------------------------------------------
+
+---04/08/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-4/8/25
+------------------------------------------------------------
+
+---04/15/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-4/15/25
+------------------------------------------------------------
+
+---04/22/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-4/22/25
+------------------------------------------------------------
+
+---04/29/25---
 Progress:
 Problem:
 Plans:
 Hours:
 
-4/29/25
+------------------------------------------------------------
+
+---05/06/25----
 Progress:
 Problem:
 Plans:
 Hours:
 
-5/6/25
-Progress:
-Problem:
-Plans:
-Hours:
+------------------------------------------------------------

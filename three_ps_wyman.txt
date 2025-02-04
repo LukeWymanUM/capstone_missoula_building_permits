@@ -7,10 +7,10 @@ Hours: How many hours did you spend working on your Capstone since last week’s
 ------------------------------------------------------------
 
 ---02/04/25---
-Progress:
-Problem:
-Plans:
-Hours:
+Progress: Meeting set up with the team on 2/6. Have been reviewing how the ESRI dashboards work. Lee sent me a bunch of videos that I've been taking notes on, and I've been researching other ESRI dashboards.
+Problem: I am not stuck on anything. I will need access to the data as soon as possible, given my working session is next week.
+Plans: I will have a mock-up dashboard just about complete. If I can't get access to the data in time for the working session, I plan to at least have fake data and try to build something with the class.
+Hours: 6
 
 ------------------------------------------------------------
 

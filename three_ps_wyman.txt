@@ -6,11 +6,19 @@ Plans: What do you intend to accomplish between now and next week’s post?
 Hours: How many hours did you spend working on your Capstone since last week’s post?
 ------------------------------------------------------------
 
+---02/11/25---
+Progress: Have a list of initial requirements. I will be working on my mock-up dashboard today and tomorrow to present in my working session. I 
+Problem: I don't know what's in the database because I don't have access to it. 
+Plans: I will have at least one mock-up dashboard done today and have an outlined "project plan" document by next week. This will be inclusive of what dashboards are wanted, what metrics should exist in each dashboard, and what sort of static analysis could be done with/without the dashboard. I need to rack up hours this week.
+Hours: 5 Hours
+
+------------------------------------------------------------
+
 ---02/04/25---
 Progress: Meeting set up with the team on 2/6. Have been reviewing how the ESRI dashboards work. Lee sent me a bunch of videos that I've been taking notes on, and I've been researching other ESRI dashboards.
 Problem: I am not stuck on anything. I will need access to the data as soon as possible, given my working session is next week.
 Plans: I will have a mock-up dashboard just about complete. If I can't get access to the data in time for the working session, I plan to at least have fake data and try to build something with the class.
-Hours: 6
+Hours: 6 Hours
 
 ------------------------------------------------------------
 
@@ -22,14 +30,6 @@ Hours: 3 Hours
 
 ------------------------------------------------------------
 END - SEE MOST RECENT ENTRY AT TOP
-------------------------------------------------------------
-
----02/11/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
 ------------------------------------------------------------
 
 ---02/18/25---

@@ -57,3 +57,35 @@ These can be helpful for managing your layers. You want to have a map of how dat
 
 ## [Knowledge Transfer Session 2](https://esriis-my.sharepoint.com/personal/juli7742_esri_com/_layouts/15/stream.aspx?id=%2Fpersonal%2Fjuli7742%5Fesri%5Fcom%2FDocuments%2FRecordings%2FKnowledge%20Transfer%20Session%202%2D20250128%5F090703%2DMeeting%20Recording%201%2Emp4&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E469344d7%2D11a9%2D4265%2D836b%2D887b06644381&ga=1)
 
+This session actually walks through the development of a dashboard. 
+
+Here are some types of dashboard elements:
+* Indicators
+    * Data: Choose which layer, filters, value type, and value type
+    * Indicator: Choose title, font, decimal places
+    * General: Add an indicator title, change background colo, or no data.
+    * Accessibility
+* Side Bar
+    * Cannot move the side bar from the far left.
+* Header
+    * Cannot move the header from the top.
+* Serial Chart
+    * Data: Select data, stastic, and field. 
+    * Chart: Choos the text color and font size. Also pick the orientation.
+    * Category Axis: Set the title and axis title.
+    * Value Axis: Set the axis title and teh minimum and maximum values.
+    * Guides: Add a value which will add a fine line for goals.
+    * Series: Change the fill, line, and thickness. You can also add labels.
+    * General: Add a title and description.
+    * Actions: Enable filtering from a same data source. Filtering in one chart impacts other charts.
+    * Accessibility
+* List
+    * Data: Choose the data, filter, and maximum elements displayed, sorted by a field.
+    * List: Create a template. Represent a textual representation for a row of data.
+    * General: Same as others.
+    * Actions
+    * Accessibility
+* Embedded Content
+    * Data: Connect to data and configure survey to work in edit mode.
+    * General: No selection or no data. 
+* Category Selector

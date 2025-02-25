@@ -6,6 +6,14 @@ Plans: What do you intend to accomplish between now and next week’s post?
 Hours: How many hours did you spend working on your Capstone since last week’s post?
 ------------------------------------------------------------
 
+---02/25/25---
+Progress: I have my data inventory template and BRD document just about wrapped up, at least for the initial dashboard of permit metrics. This should make my written product easy. I am waiting on solution for how I will actually get data. In the meantime, I've been continuing to scope requirements and learning about how I need to structure data so I can pull it into the dashboard effectively. I spent a lot of time learning about dashboarding capabilities so my build time doesn't take as long.
+Problem: Waiting on data because I don't have access. I would like to have the team pull any necessary tables into a working environment, but it's been slow. Additionally, I am trying to cover requirements, but some are sort of out of reach or repeated requirements that just require good filtering logic. I am thinking it will all come out in the wash when the dashboard is built, but I expect to test all requirements being satisfied at end of development.
+Plans: Data access and understanding. I need to put pressure on team to get me into an environment where the data is staged for my transformations.
+Hours: 12 Hours
+
+------------------------------------------------------------
+
 ---02/18/25---
 Progress: I have started a business requirements document as well as a data requirements document. The business requirements document has an outline and some content filled in. Both are about 40% complete. Lee (GIS Specialist) will be working with her teams to set up plan for me to be querying against the Accela database. We think that we can set up my own SQL database by pulling all relevant tables in from Accela. From there, I can do querying, merging, and transformations. We will then have my output tables be layers in a feature service on the ArcGIS platform.  
 Problem: The main problem right now is getting access to the data. The Missoula team is working on this now and will update me with how I can set it up. 
@@ -38,14 +46,6 @@ Hours: 3 Hours
 
 ------------------------------------------------------------
 END - SEE MOST RECENT ENTRY AT TOP
-------------------------------------------------------------
-
----02/25/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
 ------------------------------------------------------------
 
 ---03/04/25---

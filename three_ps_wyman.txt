@@ -6,6 +6,14 @@ Plans: What do you intend to accomplish between now and next week’s post?
 Hours: How many hours did you spend working on your Capstone since last week’s post?
 ------------------------------------------------------------
 
+---03/04/25---
+Progress: I have gotten details about the financial aspect of this project. We will be using spreadsheets that Kirsten puts together montly. She can continue her process and my script will simply allow for more usability of the data. The team is still working on data access for me on other permit count/cycle data.
+Problem: Still access to the data is limited.
+Plans: I plan to have all of the financial data from spreadsheets cleaned up and put into the GIS platform. I will begin work on this dashboard. Also, I will have data access on the permit count/cycle database so I can start building my queries
+Hours: 10 Hours
+
+------------------------------------------------------------
+
 ---02/25/25---
 Progress: I have my data inventory template and BRD document just about wrapped up, at least for the initial dashboard of permit metrics. This should make my written product easy. I am waiting on solution for how I will actually get data. In the meantime, I've been continuing to scope requirements and learning about how I need to structure data so I can pull it into the dashboard effectively. I spent a lot of time learning about dashboarding capabilities so my build time doesn't take as long.
 Problem: Waiting on data because I don't have access. I would like to have the team pull any necessary tables into a working environment, but it's been slow. Additionally, I am trying to cover requirements, but some are sort of out of reach or repeated requirements that just require good filtering logic. I am thinking it will all come out in the wash when the dashboard is built, but I expect to test all requirements being satisfied at end of development.
@@ -46,14 +54,6 @@ Hours: 3 Hours
 
 ------------------------------------------------------------
 END - SEE MOST RECENT ENTRY AT TOP
-------------------------------------------------------------
-
----03/04/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
 ------------------------------------------------------------
 
 ---03/11/25---

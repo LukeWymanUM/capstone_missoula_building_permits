@@ -1,3 +1,4 @@
 # Don't show any of my data files in GitHub
 
 data*
+.DS_Store

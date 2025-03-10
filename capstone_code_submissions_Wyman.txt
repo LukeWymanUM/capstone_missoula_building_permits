@@ -66,3 +66,42 @@ def build_sheet_details_df(file):
 
 ------------------------------------------------------------------------------------------------------------------------------------
 
+# Property Types increasing units by 3+
+word_to_num = {
+    "Tri": 3,
+    "Quad": 4,
+    "Five": 5,
+    "Six": 6
+}
+
+# Create a mask for multi-dwelling properties to filter only relevant rows
+multi_dwelling_mask = data_dump['Property Type'].isin([
+    'Multi-Dwelling Apartment',
+    'Multi-Dwelling Condo'
+])
+multi_dwelling_data = data_dump[multi_dwelling_mask]
+
+# Process only the filtered rows
+for index, row in multi_dwelling_data.iterrows():
+    work_description = row['Work Description']
+    
+    # Look for numeric patterns first (more common case)
+    match = re.search(
+        r'(\d+)[- ]*(Plex|Unit|APT)',
+        work_description,
+        re.IGNORECASE
+    )
+    if match:
+        data_dump.at[index, 'Units'] = int(match.group(1))
+        continue
+        
+    # Look for word-based numbers if numeric pattern wasn't found
+    for word, num in word_to_num.items():
+        match = re.search(
+            rf'\b{word}\b',
+            work_description,
+            re.IGNORECASE
+        )
+        if match:
+            data_dump.at[index, 'Units'] = num
+            break

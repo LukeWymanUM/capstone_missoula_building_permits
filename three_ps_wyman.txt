@@ -6,6 +6,14 @@ Plans: What do you intend to accomplish between now and next week’s post?
 Hours: How many hours did you spend working on your Capstone since last week’s post?
 ------------------------------------------------------------
 
+---03/11/25---
+Progress: I made significant strides in processing the financial data related to the permits. I have a data set ready for dashboarding, finally. I will have to develop another method for pulling the data from the five reports aspect of project 3, and I don't anticipate this to be difficult. While I did say I'd be done with the community development snapshot data last week, there was too much to clean up to be done in a week once I actually went into the work.
+Problem: Access to the data for the main dashboards requested in this project is yet to be given to me. The adobe reader for the data contract ended up having incorrect dates so now we have to resign the document, but apparently my account has been set up.
+Plans: I will have the community development snapshot dashboard ready for an initial review. I will have access to the data and begin on developing my SQL queries.
+Hours: 22
+
+------------------------------------------------------------
+
 ---03/04/25---
 Progress: I have gotten details about the financial aspect of this project. We will be using spreadsheets that Kirsten puts together montly. She can continue her process and my script will simply allow for more usability of the data. The team is still working on data access for me on other permit count/cycle data.
 Problem: Still access to the data is limited.

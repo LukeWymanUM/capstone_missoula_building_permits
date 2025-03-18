@@ -6,6 +6,14 @@ Plans: What do you intend to accomplish between now and next week’s post?
 Hours: How many hours did you spend working on your Capstone since last week’s post?
 ------------------------------------------------------------
 
+---03/18/25---
+Progress:I am wrapping up data needs for the community development snapshot reporting. I am building data set on the data dumps, but I might also build same data set using the report, so the city can choose to use my method or just report same as they've been doing in the past. I have access to the database, but I don't know where to look quite yet to get the data I need.
+Problem: None at the moment.
+Plans: I don't have the initial dashboard ready for review. However, I am shooting to have mock-up initial dashboard done, BRD done, and first draft of written product done by next week, mark my words. This way, I have something to go off, and it's just a matter of building out data for building permit metrics and operational insights.
+Hours: 16
+
+------------------------------------------------------------
+
 ---03/11/25---
 Progress: I made significant strides in processing the financial data related to the permits. I have a data set ready for dashboarding, finally. I will have to develop another method for pulling the data from the five reports aspect of project 3, and I don't anticipate this to be difficult. While I did say I'd be done with the community development snapshot data last week, there was too much to clean up to be done in a week once I actually went into the work.
 Problem: Access to the data for the main dashboards requested in this project is yet to be given to me. The adobe reader for the data contract ended up having incorrect dates so now we have to resign the document, but apparently my account has been set up.
@@ -62,22 +70,6 @@ Hours: 3 Hours
 
 ------------------------------------------------------------
 END - SEE MOST RECENT ENTRY AT TOP
-------------------------------------------------------------
-
----03/11/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
-------------------------------------------------------------
-
----03/18/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
 ------------------------------------------------------------
 
 ---03/25/25---

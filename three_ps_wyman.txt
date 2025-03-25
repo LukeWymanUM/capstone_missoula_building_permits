@@ -6,6 +6,14 @@ Plans: What do you intend to accomplish between now and next week’s post?
 Hours: How many hours did you spend working on your Capstone since last week’s post?
 ------------------------------------------------------------
 
+---03/25/25---
+Progress: I have an initial dashboard ready for review for 03. I also finished a great majority of my written product. I know it's not finished, but there are aspects of the product that are to be determined that I didn't feel comfortable writing about quite yet. BY the next draft, I should have this done. 
+Problem: I need to know more about the database before I develop my queries.
+Plans: Obviously, the digital product is due Sunday. I have a plan for the digital product, I just need to execute. I will be using experience builder on the GIS platform. With this, I can integrate all three of my dashboards and provide context around it, as requested out of a digital product. While dashboards may not be complete, you can simply embed content within it, which are the dashboards. So, I can at the very least have my site developed wich I can leave room for writing about it on the sides.
+Hours: 30
+
+------------------------------------------------------------
+
 ---03/18/25---
 Progress:I am wrapping up data needs for the community development snapshot reporting. I am building data set on the data dumps, but I might also build same data set using the report, so the city can choose to use my method or just report same as they've been doing in the past. I have access to the database, but I don't know where to look quite yet to get the data I need.
 Problem: None at the moment.
@@ -70,14 +78,6 @@ Hours: 3 Hours
 
 ------------------------------------------------------------
 END - SEE MOST RECENT ENTRY AT TOP
-------------------------------------------------------------
-
----03/25/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
 ------------------------------------------------------------
 
 ---04/01/25---

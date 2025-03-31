@@ -1,5 +1,5 @@
-data/  # Ignore directories starting with "data"
-!data*.txt  # But DO track any files starting with "data"
+data/      # Ignore the "data" directory and everything inside it
+!data      # Do NOT ignore a file named "data"
 
 output*
 

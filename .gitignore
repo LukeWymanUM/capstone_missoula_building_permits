@@ -1,6 +1,4 @@
-# Don't show any of my data files in GitHub
-
-data*
+!data*.txt
 
 *.DS_Store
 

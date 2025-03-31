@@ -1,6 +1,8 @@
-data/  # Ignore directories starting with "data"
-!data*.txt  # But DO track any files starting with "data"
+# Don't show any of my data files in GitHub
+
+data*
+
+*.DS_Store
 
 output*
 
-*.DS_Store

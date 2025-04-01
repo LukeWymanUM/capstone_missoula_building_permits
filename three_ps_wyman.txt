@@ -3,89 +3,173 @@ Luke Wyman
 Progress: What have you accomplished since last week’s post?
 Problems: What are you stuck on or struggling with?
 Plans: What do you intend to accomplish between now and next week’s post?
-Hours: How many hours did you spend working on your Capstone since last week’s post?
+Hours: How many hours did you spend working on your Capstone since last week’s
+post?
+------------------------------------------------------------
+
+---04/01/25---
+Progress: Tons this week. I have my completed 03 dashboard, which was fairly 
+monumentous, given all of the functionality requests that existed for that 
+dashboard. I have my digital product set up and ready to go. I spent some time
+getting to know the database tables that I was pointed to to better understand
+how I can write the queries.
+Problem: My main problem is management of scope creep.
+There is so much to do and I want it all to look good, but I need to stay
+focused on the key requirements. I was also debating on putting my actual
+dashboards in the experience builder, but they don't have high enough
+performance that I think they should be standalone websites.
+Plans: I will have my queries for 01 and 02 data needs done by Tuesday.
+The revised written product is also due next Tuesday, so I will make my changes
+and fill out the rest of what I wasn't able to fill out quite yet.  
+Hours: 48
+
 ------------------------------------------------------------
 
 ---03/25/25---
-Progress: I have an initial dashboard ready for review for 03. I also finished a great majority of my written product. I know it's not finished, but there are aspects of the product that are to be determined that I didn't feel comfortable writing about quite yet. BY the next draft, I should have this done. 
+Progress: I have an initial dashboard ready for review for 03. I also finished
+a great majority of my written product. I know it's not finished, but there are
+aspects of the product that are to be determined that I didn't feel comfortable
+writing about quite yet. BY the next draft, I should have this done. 
 Problem: I need to know more about the database before I develop my queries.
-Plans: Obviously, the digital product is due Sunday. I have a plan for the digital product, I just need to execute. I will be using experience builder on the GIS platform. With this, I can integrate all three of my dashboards and provide context around it, as requested out of a digital product. While dashboards may not be complete, you can simply embed content within it, which are the dashboards. So, I can at the very least have my site developed wich I can leave room for writing about it on the sides.
+Plans: Obviously, the digital product is due Sunday. I have a plan for the
+digital product, I just need to execute. I will be using experience builder on
+the GIS platform. With this, I can integrate all three of my dashboards and
+provide context around it, as requested out of a digital product. While
+dashboards may not be complete, you can simply embed content within it, which
+are the dashboards. So, I can at the very least have my site developed wich I
+can leave room for writing about it on the sides.
 Hours: 30
 
 ------------------------------------------------------------
 
 ---03/18/25---
-Progress:I am wrapping up data needs for the community development snapshot reporting. I am building data set on the data dumps, but I might also build same data set using the report, so the city can choose to use my method or just report same as they've been doing in the past. I have access to the database, but I don't know where to look quite yet to get the data I need.
+Progress:I am wrapping up data needs for the community development snapshot
+reporting. I am building data set on the data dumps, but I might also build
+same data set using the report, so the city can choose to use my method or just
+report same as they've been doing in the past. I have access to the database,
+but I don't know where to look quite yet to get the data I need.
 Problem: None at the moment.
-Plans: I don't have the initial dashboard ready for review. However, I am shooting to have mock-up initial dashboard done, BRD done, and first draft of written product done by next week, mark my words. This way, I have something to go off, and it's just a matter of building out data for building permit metrics and operational insights.
+Plans: I don't have the initial dashboard ready for review. However, I am
+shooting to have mock-up initial dashboard done, BRD done, and first draft of
+written product done by next week, mark my words. This way, I have something to
+go off, and it's just a matter of building out data for building permit metrics
+and operational insights.
 Hours: 16
 
 ------------------------------------------------------------
 
 ---03/11/25---
-Progress: I made significant strides in processing the financial data related to the permits. I have a data set ready for dashboarding, finally. I will have to develop another method for pulling the data from the five reports aspect of project 3, and I don't anticipate this to be difficult. While I did say I'd be done with the community development snapshot data last week, there was too much to clean up to be done in a week once I actually went into the work.
-Problem: Access to the data for the main dashboards requested in this project is yet to be given to me. The adobe reader for the data contract ended up having incorrect dates so now we have to resign the document, but apparently my account has been set up.
-Plans: I will have the community development snapshot dashboard ready for an initial review. I will have access to the data and begin on developing my SQL queries.
+Progress: I made significant strides in processing the financial data related
+to the permits. I have a data set ready for dashboarding, finally. I will have 
+o develop another method for pulling the data from the five reports aspect of
+project 3, and I don't anticipate this to be difficult. While I did say I'd be
+done with the community development snapshot data last week, there was too much
+to clean up to be done in a week once I actually went into the work.
+Problem: Access to the data for the main dashboards requested in this project
+is yet to be given to me. The adobe reader for the data contract ended up
+having incorrect dates so now we have to resign the document, but apparently my
+account has been set up.
+Plans: I will have the community development snapshot dashboard ready for an 
+nitial review. I will have access to the data and begin on developing my SQL
+queries.
 Hours: 22
 
 ------------------------------------------------------------
 
 ---03/04/25---
-Progress: I have gotten details about the financial aspect of this project. We will be using spreadsheets that Kirsten puts together montly. She can continue her process and my script will simply allow for more usability of the data. The team is still working on data access for me on other permit count/cycle data.
+Progress: I have gotten details about the financial aspect of this project. We
+will be using spreadsheets that Kirsten puts together montly. She can continue
+her process and my script will simply allow for more usability of the data. The
+team is still working on data access for me on other permit count/cycle data.
 Problem: Still access to the data is limited.
-Plans: I plan to have all of the financial data from spreadsheets cleaned up and put into the GIS platform. I will begin work on this dashboard. Also, I will have data access on the permit count/cycle database so I can start building my queries
-Hours: 10 Hours
+Plans: I plan to have all of the financial data from spreadsheets cleaned up
+and put into the GIS platform. I will begin work on this dashboard. Also, I
+will have data access on the permit count/cycle database so I can start
+building my queries
+Hours: 10
 
 ------------------------------------------------------------
 
 ---02/25/25---
-Progress: I have my data inventory template and BRD document just about wrapped up, at least for the initial dashboard of permit metrics. This should make my written product easy. I am waiting on solution for how I will actually get data. In the meantime, I've been continuing to scope requirements and learning about how I need to structure data so I can pull it into the dashboard effectively. I spent a lot of time learning about dashboarding capabilities so my build time doesn't take as long.
-Problem: Waiting on data because I don't have access. I would like to have the team pull any necessary tables into a working environment, but it's been slow. Additionally, I am trying to cover requirements, but some are sort of out of reach or repeated requirements that just require good filtering logic. I am thinking it will all come out in the wash when the dashboard is built, but I expect to test all requirements being satisfied at end of development.
-Plans: Data access and understanding. I need to put pressure on team to get me into an environment where the data is staged for my transformations.
-Hours: 12 Hours
+Progress: I have my data inventory template and BRD document just about wrapped
+up, at least for the initial dashboard of permit metrics. This should make my
+written product easy. I am waiting on solution for how I will actually get
+data. In the meantime, I've been continuing to scope requirements and learning
+about how I need to structure data so I can pull it into the dashboard
+effectively. I spent a lot of time learning about dashboarding capabilities so
+my build time doesn't take as long.
+Problem: Waiting on data because I don't have access. I would like to have the
+team pull any necessary tables into a working environment, but it's been slow.
+Additionally, I am trying to cover requirements, but some are sort of out of
+reach or repeated requirements that just require good filtering logic. I am
+thinking it will all come out in the wash when the dashboard is built, but I
+expect to test all requirements being satisfied at end of development.
+Plans: Data access and understanding. I need to put pressure on team to get me
+into an environment where the data is staged for my transformations.
+Hours: 12
 
 ------------------------------------------------------------
 
 ---02/18/25---
-Progress: I have started a business requirements document as well as a data requirements document. The business requirements document has an outline and some content filled in. Both are about 40% complete. Lee (GIS Specialist) will be working with her teams to set up plan for me to be querying against the Accela database. We think that we can set up my own SQL database by pulling all relevant tables in from Accela. From there, I can do querying, merging, and transformations. We will then have my output tables be layers in a feature service on the ArcGIS platform.  
-Problem: The main problem right now is getting access to the data. The Missoula team is working on this now and will update me with how I can set it up. 
-Plans: I plan to have my business requirements document done and data requirement done by next Tuesday. With these complete, and the Missoula team getting me access, I can use my knowledge to develop the SQL Queries and perform the necessary transformations before adding them as layers to the service.
-Hours: 11 Hours
+Progress: I have started a business requirements document as well as a data
+requirements document. The business requirements document has an outline and
+some content filled in. Both are about 40% complete. Lee (GIS Specialist) will
+be working with her teams to set up plan for me to be querying against the
+Accela database. We think that we can set up my own SQL database by pulling all
+relevant tables in from Accela. From there, I can do querying, merging, and
+transformations. We will then have my output tables be layers in a feature
+service on the ArcGIS platform.  
+Problem: The main problem right now is getting access to the data. The Missoula
+team is working on this now and will update me with how I can set it up. 
+Plans: I plan to have my business requirements document done and data
+requirement done by next Tuesday. With these complete, and the Missoula team
+getting me access, I can use my knowledge to develop the SQL Queries and 
+perform the necessary transformations before adding them as layers to the
+service.
+Hours: 11
 
 ------------------------------------------------------------
 
 ---02/11/25---
-Progress: Have a list of initial requirements. I will be working on my mock-up dashboard today and tomorrow to present in my working session.
+Progress: Have a list of initial requirements. I will be working on my mock-up 
+ashboard today and tomorrow to present in my working session.
 Problem: I don't know what's in the database because I don't have access to it. 
-Plans: I will have at least one mock-up dashboard done today and have an outlined "project plan" document by next week. This will be inclusive of what dashboards are wanted, what metrics should exist in each dashboard, and what sort of static analysis could be done with/without the dashboard. I need to rack up hours this week.
-Hours: 5 Hours
+Plans: I will have at least one mock-up dashboard done today and have an
+outlined "project plan" document by next week. This will be inclusive of what
+dashboards are wanted, what metrics should exist in each dashboard, and what
+sort of static analysis could be done with/without the dashboard. I need to
+rack up hours this week.
+Hours: 5
 
 ------------------------------------------------------------
 
 ---02/04/25---
-Progress: Meeting set up with the team on 2/6. Have been reviewing how the ESRI dashboards work. Lee sent me a bunch of videos that I've been taking notes on, and I've been researching other ESRI dashboards.
-Problem: I am not stuck on anything. I will need access to the data as soon as possible, given my working session is next week.
-Plans: I will have a mock-up dashboard just about complete. If I can't get access to the data in time for the working session, I plan to at least have fake data and try to build something with the class.
-Hours: 6 Hours
+Progress: Meeting set up with the team on 2/6. Have been reviewing how the ESRI
+dashboards work. Lee sent me a bunch of videos that I've been taking notes on,
+and I've been researching other ESRI dashboards.
+Problem: I am not stuck on anything. I will need access to the data as soon as
+possible, given my working session is next week.
+Plans: I will have a mock-up dashboard just about complete. If I can't get
+access to the data in time for the working session, I plan to at least have
+fake data and try to build something with the class.
+Hours: 6
 
 ------------------------------------------------------------
 
 ---01/28/25---
-Progress: Meeting set up with the Missoula Development team on 1/30. Had a meeting with Andrew to discuss the project in more detail.
-Problem: No problems at the moment. I will find out more on 1/30 for what the project entails.
-Plans: I have a meeting with the team on 1/30. From here, I hope to have a cadence for updating the team with progress. I plan to have a better understanding of the requirements for a successful project. I would like to get all set up with all of my access requests to their database as well as have any licenses applied (PowerBI). I would like to have a timeline set up as well.
-Hours: 3 Hours
+Progress: Meeting set up with the Missoula Development team on 1/30. Had a
+meeting with Andrew to discuss the project in more detail.
+Problem: No problems at the moment. I will find out more on 1/30 for what the
+project entails.
+Plans: I have a meeting with the team on 1/30. From here, I hope to have a
+cadence for updating the team with progress. I plan to have a better
+understanding of the requirements for a successful project. I would like to get
+all set up with all of my access requests to their database as well as have any
+licenses applied (PowerBI). I would like to have a timeline set up as well.
+Hours: 3
 
 ------------------------------------------------------------
 END - SEE MOST RECENT ENTRY AT TOP
-------------------------------------------------------------
-
----04/01/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
 ------------------------------------------------------------
 
 ---04/08/25---

@@ -1,0 +1,309 @@
+WITH FILTERED_PERMITS AS (
+    SELECT
+        B1PERMIT.B1_PER_ID1,
+        B1PERMIT.B1_PER_ID2,
+        B1PERMIT.B1_PER_ID3,
+        B1PERMIT.B1_ALT_ID,
+        CASE 
+            WHEN B1PERMIT.B1_PER_TYPE = 'Residential Construction' THEN 'Residential'
+            WHEN B1PERMIT.B1_PER_TYPE = 'Commercial Construction' THEN 'Commercial'
+            ELSE 'Unknown'
+        END AS B1_PER_TYPE
+    FROM 
+        B1PERMIT
+    WHERE 
+        B1PERMIT.B1_PER_GROUP = 'Building'
+        AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction')
+        AND B1_APPL_CLASS = 'COMPLETE'
+        AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn', 'Refunded')
+        AND CONVERT(DATE, B1PERMIT.B1_FILE_DD) >= '2020-01-01'
+        AND B1PERMIT.B1_ALT_ID IN ('2023-MSS-RES-00728', 
+                                    '2023-MSS-RES-00245',
+                                    '2021-MSS-RES-00646',
+                                    '2021-MSS-RES-01014',
+                                    '2023-MSS-RES-00052')
+),
+PERMIT_TYPE AS (
+    SELECT
+        BCHCKBOX.B1_PER_ID1,
+        BCHCKBOX.B1_PER_ID2,
+        BCHCKBOX.B1_PER_ID3,
+        MIN(BCHCKBOX.B1_CHECKLIST_COMMENT) AS PERMIT_TYPE_x
+    FROM 
+        BCHCKBOX
+    JOIN 
+        FILTERED_PERMITS 
+            ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    WHERE 
+        BCHCKBOX.B1_CHECKBOX_DESC IN ('Commercial Subtype', 'Residential Subtype')
+    GROUP BY 
+        BCHCKBOX.B1_PER_ID1, 
+        BCHCKBOX.B1_PER_ID2, 
+        BCHCKBOX.B1_PER_ID3
+),
+PROJECT_TYPE AS (
+    SELECT
+        BCHCKBOX.B1_PER_ID1,
+        BCHCKBOX.B1_PER_ID2,
+        BCHCKBOX.B1_PER_ID3,
+        CASE
+            WHEN BCHCKBOX.B1_CHECKLIST_COMMENT = 'CHECKED' THEN 'New Construction'
+            ELSE 'Addition/Remodel'
+        END AS Project_Type
+    FROM 
+        BCHCKBOX
+    JOIN 
+        FILTERED_PERMITS 
+            ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    WHERE 
+        BCHCKBOX.B1_CHECKBOX_DESC = 'New Construction'
+),
+GPROCESS_HISTORY_ROWS AS (
+    SELECT
+        GPROCESS_HISTORY.B1_PER_ID1,
+        GPROCESS_HISTORY.B1_PER_ID2,
+        GPROCESS_HISTORY.B1_PER_ID3,
+        FILTERED_PERMITS.B1_ALT_ID,
+        GPROCESS_HISTORY.SD_PRO_DES AS PROCESS_DESCRIPTION,
+        GPROCESS_HISTORY.SD_APP_DES AS PROCESS_STATUS,
+        GPROCESS_HISTORY.REC_DATE AS PROCESS_DATE,
+        CASE
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Application Document Review'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Documents Rejected' THEN 'Applicant'
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Review Consolidation'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Resubmittal Required' THEN 'Applicant'
+            WHEN GPROCESS_HISTORY.SD_AGENCY_CODE IN ('CITY', 'NA', 'AMS', 'HEALTH') THEN 'City'
+            ELSE 'Unknown'
+            END AS RESPONSIBLE_PARTY,
+        CASE
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Application Document Review'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Documents Rejected' THEN 'Applicant'
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Review Consolidation'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Resubmittal Required' THEN 'Applicant'
+            ELSE GPROCESS_HISTORY.SD_BUREAU_CODE
+            END AS RESPONSIBLE_PARTY_DEPARTMENT,
+        CASE
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Application Document Review'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Documents Rejected' THEN 'Applicant'
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Review Consolidation'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Resubmittal Required' THEN 'Applicant'
+            ELSE GPROCESS_HISTORY.G6_ISS_FNAME + ' ' + GPROCESS_HISTORY.G6_ISS_LNAME
+            END AS RESPONSIBLE_PARTY_NAME,
+        'GPROCESS_HISTORY' AS SOURCE
+    FROM 
+        GPROCESS_HISTORY
+    JOIN 
+        FILTERED_PERMITS 
+            ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+),
+STATUS_HISTORY_ROWS AS (
+    SELECT 
+        STATUS_HISTORY.B1_PER_ID1,
+        STATUS_HISTORY.B1_PER_ID2,
+        STATUS_HISTORY.B1_PER_ID3,
+        FILTERED_PERMITS.B1_ALT_ID,
+        STATUS_HISTORY.TYPE AS PROCESS_DESCRIPTION,
+        STATUS_HISTORY.STATUS AS PROCESS_STATUS,
+        CASE 
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION' 
+            AND STATUS_HISTORY.STATUS = 'Open' THEN DATEADD(SECOND, -1, STATUS_HISTORY.REC_DATE)
+            ELSE STATUS_HISTORY.REC_DATE 
+            END AS PROCESS_DATE,
+        CASE
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Waiting Review Fee' THEN 'Applicant'
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Open' THEN 'City'
+            WHEN STATUS_HISTORY.ACTBY_AGENCY_CODE IN ('CITY', 'NA', 'AMS') THEN 'City'
+            WHEN STATUS_HISTORY.ACTBY_AGENCY_CODE IS NULL THEN 'Applicant'
+            ELSE 'Unknown'
+            END AS RESPONSIBLE_PARTY,
+        CASE
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Waiting Review Fee' THEN 'Applicant'
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Open' THEN 'P&LUSE'
+            WHEN STATUS_HISTORY.ACTBY_BUREAU_CODE IS NOT NULL THEN STATUS_HISTORY.ACTBY_BUREAU_CODE
+            ELSE 'Unknown'
+            END AS RESPONSIBLE_PARTY_DEPARTMENT,
+        CASE 
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Waiting Review Fee' THEN 'Applicant'
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Open' THEN 'Krystal Aucutt'
+            WHEN STATUS_HISTORY.ACTBY_FNAME IS NOT NULL OR STATUS_HISTORY.ACTBY_LNAME IS NOT NULL THEN STATUS_HISTORY.ACTBY_FNAME + ' ' + STATUS_HISTORY.ACTBY_LNAME
+            ELSE 'Unknown'
+            END AS RESPONSIBLE_PARTY_NAME,
+        'STATUS_HISTORY' AS SOURCE
+    FROM 
+        STATUS_HISTORY
+    JOIN 
+        FILTERED_PERMITS
+            ON STATUS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND STATUS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND STATUS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    WHERE STATUS_HISTORY.STATUS != 'Expired'
+),
+PERMIT_DETAILS AS (
+    SELECT 
+        FILTERED_PERMITS.B1_PER_ID1,
+        FILTERED_PERMITS.B1_PER_ID2,
+        FILTERED_PERMITS.B1_PER_ID3,
+        FILTERED_PERMITS.B1_ALT_ID,
+        FILTERED_PERMITS.B1_PER_TYPE,
+        PERMIT_TYPE.PERMIT_TYPE_x,
+        PROJECT_TYPE.Project_Type
+    FROM FILTERED_PERMITS
+    JOIN PERMIT_TYPE
+        ON FILTERED_PERMITS.B1_PER_ID1 = PERMIT_TYPE.B1_PER_ID1
+        AND FILTERED_PERMITS.B1_PER_ID2 = PERMIT_TYPE.B1_PER_ID2
+        AND FILTERED_PERMITS.B1_PER_ID3 = PERMIT_TYPE.B1_PER_ID3
+    JOIN PROJECT_TYPE
+        ON FILTERED_PERMITS.B1_PER_ID1 = PROJECT_TYPE.B1_PER_ID1
+        AND FILTERED_PERMITS.B1_PER_ID2 = PROJECT_TYPE.B1_PER_ID2
+        AND FILTERED_PERMITS.B1_PER_ID3 = PROJECT_TYPE.B1_PER_ID3
+),
+ALL_ROW_HISTORY AS (
+    SELECT 
+        * 
+    FROM 
+        GPROCESS_HISTORY_ROWS
+    UNION ALL
+    SELECT 
+        *
+    FROM 
+        STATUS_HISTORY_ROWS
+),
+Initial_Calculations AS (
+    SELECT
+        ALL_ROW_HISTORY.*,
+        CONVERT(DECIMAL(10,6), DATEDIFF(SECOND, FIRST_VALUE(ALL_ROW_HISTORY.PROCESS_DATE) OVER (
+            PARTITION BY FILTERED_PERMITS.B1_ALT_ID 
+            ORDER BY ALL_ROW_HISTORY.PROCESS_DATE
+        ), ALL_ROW_HISTORY.PROCESS_DATE) / 86400.0) AS PROCESS_DAYS_OPEN,
+        CONVERT(DECIMAL(10,6), DATEDIFF(SECOND, ALL_ROW_HISTORY.PROCESS_DATE, LEAD(ALL_ROW_HISTORY.PROCESS_DATE, 1) OVER (
+            PARTITION BY FILTERED_PERMITS.B1_ALT_ID 
+            ORDER BY ALL_ROW_HISTORY.PROCESS_DATE
+        )) / 86400.0) AS Days_With_Responsible_Party,
+        CONVERT(DECIMAL(10,6), DATEDIFF(SECOND, LAG(ALL_ROW_HISTORY.PROCESS_DATE, 1) OVER (
+            PARTITION BY FILTERED_PERMITS.B1_ALT_ID 
+            ORDER BY ALL_ROW_HISTORY.PROCESS_DATE
+        ), ALL_ROW_HISTORY.PROCESS_DATE) / 86400.0) AS Days_With_Responsible_Party_Previous
+    FROM
+        ALL_ROW_HISTORY 
+    JOIN 
+        FILTERED_PERMITS
+            ON ALL_ROW_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND ALL_ROW_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND ALL_ROW_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+),
+Next_Calculations AS (
+    SELECT
+        Initial_Calculations.*,
+        LEAD(Initial_Calculations.PROCESS_DAYS_OPEN, 1) OVER (
+            PARTITION BY Initial_Calculations.B1_ALT_ID
+            ORDER BY Initial_Calculations.PROCESS_DATE
+        ) AS PROCESS_DAYS_OPEN_PREVIOUS,
+        CASE 
+            WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 'Intake Cycle'
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') AND
+                Initial_Calculations.PROCESS_STATUS = 'Complete' THEN 'Review Cycle'
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' AND
+                Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 'Post-Review'
+            ELSE NULL
+        END AS Change_Cycle,
+        CASE 
+            WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 1
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') AND
+                Initial_Calculations.PROCESS_STATUS = 'Complete' THEN 2
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' AND
+                Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+            ELSE NULL
+        END AS Cycle_ID,
+        CASE 
+            WHEN MAX(CASE 
+                WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 1
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') AND
+                    Initial_Calculations.PROCESS_STATUS = 'Complete' THEN 2
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' AND
+                    Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                ELSE NULL
+            END) OVER (
+                PARTITION BY Initial_Calculations.B1_ALT_ID
+                ORDER BY Initial_Calculations.PROCESS_DATE
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) = 1 THEN 'Intake Cycle'
+            WHEN MAX(CASE 
+                WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 1
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') AND
+                    Initial_Calculations.PROCESS_STATUS = 'Complete' THEN 2
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' AND
+                    Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                ELSE NULL
+            END) OVER (
+                PARTITION BY Initial_Calculations.B1_ALT_ID
+                ORDER BY Initial_Calculations.PROCESS_DATE
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) = 2 THEN 'Review Cycle'
+            WHEN MAX(CASE 
+                WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 1
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') AND
+                    Initial_Calculations.PROCESS_STATUS = 'Complete' THEN 2
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' AND
+                    Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                ELSE NULL
+            END) OVER (
+                PARTITION BY Initial_Calculations.B1_ALT_ID
+                ORDER BY Initial_Calculations.PROCESS_DATE
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) = 3 THEN 'Post-Review'
+            ELSE NULL
+        END AS Filled_Change_Cycle
+    FROM Initial_Calculations
+),
+Cycle_Calculations AS (
+    SELECT
+        Next_Calculations.*,
+        1 + SUM(CASE WHEN Next_Calculations.RESPONSIBLE_PARTY = 'Applicant' THEN 1 ELSE 0 END) OVER (
+            PARTITION BY Next_Calculations.B1_PER_ID1, Next_Calculations.B1_PER_ID2, Next_Calculations.B1_PER_ID3,
+                         Next_Calculations.Filled_Change_Cycle
+            ORDER BY Next_Calculations.PROCESS_DATE
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS Cycle_Number
+    FROM 
+        Next_Calculations
+),
+FINAL_BUILDING_PERMIT_METRICS AS (
+    SELECT * FROM Cycle_Calculations
+)
+SELECT
+    FINAL_BUILDING_PERMIT_METRICS.B1_ALT_ID,
+    PERMIT_DETAILS.B1_PER_TYPE,
+    PERMIT_DETAILS.PERMIT_TYPE_x,
+    PERMIT_DETAILS.Project_Type,
+    FINAL_BUILDING_PERMIT_METRICS.PROCESS_DESCRIPTION, 
+    FINAL_BUILDING_PERMIT_METRICS.PROCESS_STATUS,
+    FINAL_BUILDING_PERMIT_METRICS.PROCESS_DATE,
+    FINAL_BUILDING_PERMIT_METRICS.RESPONSIBLE_PARTY,
+    FINAL_BUILDING_PERMIT_METRICS.RESPONSIBLE_PARTY_DEPARTMENT,
+    FINAL_BUILDING_PERMIT_METRICS.RESPONSIBLE_PARTY_NAME,
+    FINAL_BUILDING_PERMIT_METRICS.PROCESS_DAYS_OPEN,
+    FINAL_BUILDING_PERMIT_METRICS.PROCESS_DAYS_OPEN_PREVIOUS,
+    FINAL_BUILDING_PERMIT_METRICS.Days_With_Responsible_Party,
+    FINAL_BUILDING_PERMIT_METRICS.Days_With_Responsible_Party_Previous,
+    FINAL_BUILDING_PERMIT_METRICS.Filled_Change_Cycle,
+    FINAL_BUILDING_PERMIT_METRICS.Cycle_Number
+FROM
+    FINAL_BUILDING_PERMIT_METRICS
+LEFT JOIN
+    PERMIT_DETAILS
+        ON FINAL_BUILDING_PERMIT_METRICS.B1_PER_ID1 = PERMIT_DETAILS.B1_PER_ID1
+        AND FINAL_BUILDING_PERMIT_METRICS.B1_PER_ID2 = PERMIT_DETAILS.B1_PER_ID2
+        AND FINAL_BUILDING_PERMIT_METRICS.B1_PER_ID3 = PERMIT_DETAILS.B1_PER_ID3
+OPTION (HASH JOIN)

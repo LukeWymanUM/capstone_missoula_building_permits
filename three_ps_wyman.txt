@@ -7,6 +7,17 @@ Hours: How many hours did you spend working on your Capstone since last week’s
 post?
 ------------------------------------------------------------
 
+---04/08/25---
+Progress: Tons of progress on the queries. In the home stretch of them. Then I 
+can write the rest of my written product today and tidy some things up while 
+the team reviews the query.
+Problem: None, just time management if anything.
+Plans: Data should be in the GIS platform for me to use and I can start
+with building these dashboards.
+Hours: 38
+
+------------------------------------------------------------
+
 ---04/01/25---
 Progress: Tons this week. I have my completed 03 dashboard, which was fairly 
 monumentous, given all of the functionality requests that existed for that 
@@ -170,14 +181,6 @@ Hours: 3
 
 ------------------------------------------------------------
 END - SEE MOST RECENT ENTRY AT TOP
-------------------------------------------------------------
-
----04/08/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
 ------------------------------------------------------------
 
 ---04/15/25---

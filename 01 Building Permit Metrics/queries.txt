@@ -9,6 +9,14 @@ ORDER BY NEWID()
 
 
 
+
+
+SELECT TOP 10 *
+FROM GPROCESS_HISTORY
+ORDER BY NEWID()
+
+
+
 SELECT STATUS_HISTORY.*, B1PERMIT.*
 FROM STATUS_HISTORY
 JOIN B1PERMIT 
@@ -19,6 +27,19 @@ WHERE B1PERMIT.B1_PER_GROUP = 'Building'
     AND (B1PERMIT.B1_ALT_ID='2024-MSS-RES-00082' 
     OR B1PERMIT.B1_ALT_ID='2023-MSS-RES-00728')
 ORDER BY STATUS_HISTORY.STATUS_DATE
+
+
+SELECT GPROCESS_HISTORY.*, B1PERMIT.*
+FROM GPROCESS_HISTORY
+JOIN B1PERMIT 
+    ON GPROCESS_HISTORY.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND GPROCESS_HISTORY.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND GPROCESS_HISTORY.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+WHERE B1PERMIT.B1_PER_GROUP = 'Building'
+    AND (B1PERMIT.B1_ALT_ID='2024-MSS-RES-00082' 
+    OR B1PERMIT.B1_ALT_ID='2023-MSS-RES-00728')
+ORDER BY GPROCESS_HISTORY.STATUS_DATE
+
 
 
 SELECT TOP 20 B1PERMIT.*
@@ -48,7 +69,7 @@ JOIN B1PERMIT
     AND STATUS_HISTORY.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
     AND STATUS_HISTORY.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
 WHERE B1PERMIT.B1_PER_GROUP = 'Building'
-GROUPBY STATUS
+GROUP BY STATUS
 
 
 ###############################################################################
@@ -120,11 +141,533 @@ ORDER BY TransitionCount DESC;
 
 ## 
 
-SELECT ACTBY_AGENCY_CODE, COUNT(*) AS count
+SELECT ACTBY_BUREAU_CODE, COUNT(*) AS count
 FROM STATUS_HISTORY
 JOIN B1PERMIT 
     ON STATUS_HISTORY.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
     AND STATUS_HISTORY.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
     AND STATUS_HISTORY.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+ WHERE B1PERMIT.B1_PER_GROUP = 'Building'
+GROUP BY ACTBY_BUREAU_CODE
+
+
+###############################################################################
+################# Joined B1PERMIT and GPROCESS_HISTORY ########################
+###############################################################################
+
+SELECT GPROCESS_HISTORY.*, B1PERMIT.*
+FROM GPROCESS_HISTORY
+JOIN B1PERMIT 
+    ON GPROCESS_HISTORY.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND GPROCESS_HISTORY.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND GPROCESS_HISTORY.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
 WHERE B1PERMIT.B1_PER_GROUP = 'Building'
-GROUPBY ACTBY_AGENCY_CODE
+    AND (B1PERMIT.B1_ALT_ID='2024-MSS-RES-00082' 
+    OR B1PERMIT.B1_ALT_ID='2023-MSS-RES-00728')
+ORDER BY GPROCESS_HISTORY_SEQ_NBR
+
+###############################################################################
+##################### Joined B1PERMIT and BCHKBOX #############################
+###############################################################################
+
+# This table will show our two test permits joined to checkbox table
+SELECT BCHCKBOX.*, B1PERMIT.*
+FROM BCHCKBOX
+JOIN B1PERMIT 
+    ON BCHCKBOX.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND BCHCKBOX.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND BCHCKBOX.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+WHERE B1PERMIT.B1_PER_GROUP = 'Building'
+    AND (B1PERMIT.B1_ALT_ID='2024-MSS-RES-00082' 
+    OR B1PERMIT.B1_ALT_ID='2023-MSS-RES-00728')
+
+# This is an example of what a revision looks like
+SELECT BCHCKBOX.*
+FROM BCHCKBOX
+JOIN B1PERMIT 
+    ON BCHCKBOX.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND BCHCKBOX.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND BCHCKBOX.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+WHERE B1PERMIT.B1_PER_GROUP = 'Building'
+    AND (B1PERMIT.B1_ALT_ID='2024-MSS-RES-00546.01' 
+    OR B1PERMIT.B1_ALT_ID='2024-MSS-RES-00546')
+
+
+SELECT B1_CHECKBOX_DESC, COUNT(*) AS count
+FROM BCHCKBOX
+JOIN B1PERMIT 
+    ON BCHCKBOX.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND BCHCKBOX.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND BCHCKBOX.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+WHERE B1PERMIT.B1_PER_GROUP = 'Building'
+GROUP BY B1_CHECKBOX_DESC
+
+
+###############################################################################
+################# Joined B1PERMIT and GPROCESS ########################
+###############################################################################
+
+SELECT GPROCESS.*, B1PERMIT.*
+FROM GPROCESS
+JOIN B1PERMIT 
+    ON GPROCESS.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND GPROCESS.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND GPROCESS.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+WHERE B1PERMIT.B1_PER_GROUP = 'Building'
+    AND (B1PERMIT.B1_ALT_ID='2024-MSS-RES-00082' 
+    OR B1PERMIT.B1_ALT_ID='2023-MSS-RES-00728')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT 
+    B1PERMIT.B1_ALT_ID AS Permit_ID,
+    CASE 
+        WHEN B1PERMIT.B1_PER_TYPE = 'Residential Construction' THEN 'Residential'
+        WHEN B1PERMIT.B1_PER_TYPE = 'Commercial Construction' THEN 'Commercial'
+        ELSE B1PERMIT.B1_PER_TYPE
+    END AS Permit_Type,
+    PROJECTTYPE.Project_Type,
+    BCHCKBOX.B1_CHECKBOX_TYPE,
+    BCHCKBOX.B1_CHECKBOX_DESC,
+    BCHCKBOX.B1_CHECKLIST_COMMENT,
+    BCHCKBOX.REC_DATE
+FROM B1PERMIT
+JOIN BCHCKBOX
+    ON BCHCKBOX.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND BCHCKBOX.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND BCHCKBOX.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+JOIN (
+    SELECT 
+        B1_PER_ID1,
+        B1_PER_ID2,
+        B1_PER_ID3,
+        MIN(CASE 
+                WHEN B1_CHECKLIST_COMMENT = 'CHECKED' AND B1_CHECKBOX_DESC IN ('Addition', 'Remodel', 'Tenant New Improvement', 'Repair', 'Reroof') THEN 'Addition/Remodel'
+                WHEN B1_CHECKLIST_COMMENT = 'CHECKED' AND B1_CHECKBOX_DESC = 'New Construction' THEN 'New Construction'
+                ELSE 'Not Assigned'
+            END
+            ) AS Project_Type
+    FROM BCHCKBOX
+    GROUP BY B1_PER_ID1, B1_PER_ID2, B1_PER_ID3)
+    AS PROJECTTYPE
+    ON PROJECTTYPE.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND PROJECTTYPE.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND PROJECTTYPE.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+WHERE B1PERMIT.B1_PER_GROUP = 'Building' 
+    AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction')
+    AND B1PERMIT.B1_ALT_ID = '2023-MSS-RES-00728'
+
+
+
+
+
+SELECT 
+    B1PERMIT.B1_ALT_ID AS Permit_ID,
+    CASE 
+        WHEN B1PERMIT.B1_PER_TYPE = 'Residential Construction' THEN 'Residential'
+        WHEN B1PERMIT.B1_PER_TYPE = 'Commercial Construction' THEN 'Commercial'
+        ELSE B1PERMIT.B1_PER_TYPE
+    END AS Permit_Type,
+    PROJECTTYPE.Project_Type
+FROM B1PERMIT
+JOIN (
+    SELECT 
+        B1_PER_ID1,
+        B1_PER_ID2,
+        B1_PER_ID3,
+        MIN(CASE 
+                WHEN B1_CHECKLIST_COMMENT = 'CHECKED' AND B1_CHECKBOX_DESC IN ('Addition', 'Remodel', 'Tenant New Improvement', 'Repair', 'Reroof', 'Reside') THEN 'Addition/Remodel'
+                WHEN B1_CHECKLIST_COMMENT = 'CHECKED' AND B1_CHECKBOX_DESC = 'New Construction' THEN 'New Construction'
+                ELSE 'Not Assigned'
+            END
+            ) AS Project_Type
+    FROM BCHCKBOX
+    GROUP BY B1_PER_ID1, B1_PER_ID2, B1_PER_ID3
+    ) AS PROJECTTYPE
+    ON PROJECTTYPE.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND PROJECTTYPE.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND PROJECTTYPE.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+WHERE B1PERMIT.B1_PER_GROUP = 'Building' 
+    AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+SELECT 
+    B1PERMIT.B1_ALT_ID AS Permit_ID,
+    CASE 
+        WHEN B1PERMIT.B1_PER_TYPE = 'Residential Construction' THEN 'Residential'
+        WHEN B1PERMIT.B1_PER_TYPE = 'Commercial Construction' THEN 'Commercial'
+        ELSE B1PERMIT.B1_PER_TYPE
+    END AS Permit_Type,
+    PROJECTTYPE.Project_Type,
+    GPROCESS_HISTORY.SD_PRO_DES, 
+    GPROCESS_HISTORY.SD_APP_DES,
+    GPROCESS_HISTORY.SD_APP_DD,
+    GPROCESS_HISTORY.REC_DATE,
+    'GPROCESS_HISTORY RECORD' AS SOURCE
+FROM B1PERMIT
+LEFT JOIN (
+    SELECT 
+        B1_PER_ID1,
+        B1_PER_ID2,
+        B1_PER_ID3,
+        MIN(CASE 
+                WHEN B1_CHECKLIST_COMMENT = 'CHECKED' AND B1_CHECKBOX_DESC IN ('Addition', 
+                                                                                'Remodel', 
+                                                                                'Tenant Improvement', 
+                                                                                'Tenant New Improvement',
+                                                                                'Repair',
+                                                                                'Reroof',
+                                                                                'Reside',
+                                                                                'Change of Use'
+                                                                                ) THEN 'Addition/Remodel'
+                WHEN B1_CHECKLIST_COMMENT = 'CHECKED' AND B1_CHECKBOX_DESC = 'New Construction' THEN 'New Construction'
+                ELSE 'Not Assigned'
+            END
+            ) AS Project_Type
+        FROM BCHCKBOX
+        GROUP BY B1_PER_ID1, B1_PER_ID2, B1_PER_ID3
+    ) AS PROJECTTYPE
+    ON PROJECTTYPE.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND PROJECTTYPE.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND PROJECTTYPE.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+JOIN GPROCESS_HISTORY
+    ON GPROCESS_HISTORY.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND GPROCESS_HISTORY.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND GPROCESS_HISTORY.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+WHERE B1PERMIT.B1_PER_GROUP = 'Building'                                                        -- Building Permits
+    AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction')         -- Residential and New Construction
+    AND B1_APPL_CLASS = 'COMPLETE'                                                              -- Completed Applications
+    AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn')                                           -- Applications that were not closed or withdrawn
+    AND CONVERT(DATE, B1PERMIT.B1_FILE_DD) >= '2020-01-01'                                      -- Only Since 2020
+    AND Project_Type != 'Not Assigned'
+    AND B1PERMIT.B1_ALT_ID = '2023-MSS-RES-00728'
+UNION
+SELECT 
+    B1PERMIT.B1_ALT_ID AS Permit_ID,
+    CASE 
+        WHEN B1PERMIT.B1_PER_TYPE = 'Residential Construction' THEN 'Residential'
+        WHEN B1PERMIT.B1_PER_TYPE = 'Commercial Construction' THEN 'Commercial'
+        ELSE B1PERMIT.B1_PER_TYPE
+    END AS Permit_Type,
+    PROJECTTYPE.Project_Type,
+    'Application Received' AS SD_PRO_DES, 
+    'Received' AS SD_APP_DES,
+    B1PERMIT.B1_FILE_DD AS SD_APP_DD,
+    B1PERMIT.REC_DATE AS REC_DATE,
+    'B1_PERMIT RECORD' AS SOURCE
+FROM B1PERMIT
+LEFT JOIN (
+    SELECT 
+        B1_PER_ID1,
+        B1_PER_ID2,
+        B1_PER_ID3,
+        MIN(CASE 
+                WHEN B1_CHECKLIST_COMMENT = 'CHECKED' AND B1_CHECKBOX_DESC IN ('Addition', 
+                                                                                'Remodel', 
+                                                                                'Tenant Improvement', 
+                                                                                'Tenant New Improvement',
+                                                                                'Repair',
+                                                                                'Reroof',
+                                                                                'Reside',
+                                                                                'Change of Use'
+                                                                                ) THEN 'Addition/Remodel'
+                WHEN B1_CHECKLIST_COMMENT = 'CHECKED' AND B1_CHECKBOX_DESC = 'New Construction' THEN 'New Construction'
+                ELSE 'Not Assigned'
+            END
+            ) AS Project_Type
+        FROM BCHCKBOX
+        GROUP BY B1_PER_ID1, B1_PER_ID2, B1_PER_ID3
+    ) AS PROJECTTYPE
+    ON PROJECTTYPE.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND PROJECTTYPE.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND PROJECTTYPE.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+WHERE B1PERMIT.B1_PER_GROUP = 'Building'                                                        -- Building Permits
+    AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction')         -- Residential and New Construction
+    AND B1_APPL_CLASS = 'COMPLETE'                                                              -- Completed Applications
+    AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn')                                           -- Applications that were not closed or withdrawn
+    AND CONVERT(DATE, B1PERMIT.B1_FILE_DD) >= '2020-01-01'                                      -- Only Since 2020
+    AND Project_Type != 'Not Assigned'
+    AND B1PERMIT.B1_ALT_ID = '2023-MSS-RES-00728'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# HOW do I get the Building permit type??
+SELECT B1_CHECKLIST_COMMENT, count(*)
+FROM BCHCKBOX
+JOIN B1PERMIT 
+    ON BCHCKBOX.B1_PER_ID1 = B1PERMIT.B1_PER_ID1
+    AND BCHCKBOX.B1_PER_ID2 = B1PERMIT.B1_PER_ID2
+    AND BCHCKBOX.B1_PER_ID3 = B1PERMIT.B1_PER_ID3
+WHERE B1PERMIT.B1_PER_GROUP = 'Building'
+    AND B1_CHECKBOX_TYPE = 'HISTORICAL'
+    AND B1_CHECKBOX_DESC IN ('Commercial Subtype', 'Residential Subtype')
+GROUP BY B1_CHECKLIST_COMMENT
+ORDER BY B1_CHECKLIST_COMMENT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+WITH ProjectTypeCTE AS (
+    SELECT 
+        B1_PER_ID1,
+        B1_PER_ID2,
+        B1_PER_ID3,
+        MIN(CASE 
+                WHEN B1_CHECKLIST_COMMENT = 'CHECKED' AND B1_CHECKBOX_DESC IN (
+                    'Addition', 'Remodel', 'Tenant Improvement', 
+                    'Tenant New Improvement', 'Repair', 'Reroof', 
+                    'Reside', 'Change of Use'
+                ) THEN 'Addition/Remodel'
+                WHEN B1_CHECKLIST_COMMENT = 'CHECKED' AND B1_CHECKBOX_DESC = 'New Construction' 
+                THEN 'New Construction'
+                ELSE 'Not Assigned'
+        END) AS Project_Type
+    FROM BCHCKBOX
+    GROUP BY B1_PER_ID1, B1_PER_ID2, B1_PER_ID3
+),
+FilteredPermits AS (
+    SELECT 
+        B1PERMIT.B1_ALT_ID,
+        B1PERMIT.B1_PER_ID1,
+        B1PERMIT.B1_PER_ID2,
+        B1PERMIT.B1_PER_ID3,
+        CASE 
+            WHEN B1PERMIT.B1_PER_TYPE = 'Residential Construction' THEN 'Residential'
+            WHEN B1PERMIT.B1_PER_TYPE = 'Commercial Construction' THEN 'Commercial'
+            ELSE B1PERMIT.B1_PER_TYPE
+        END AS Permit_Type,
+        B1PERMIT.B1_FILE_DD,
+        B1PERMIT.REC_DATE
+    FROM B1PERMIT
+    WHERE 
+        B1PERMIT.B1_PER_GROUP = 'Building'
+        AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction')
+        AND B1_APPL_CLASS = 'COMPLETE'
+        AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn')
+        AND CONVERT(DATE, B1PERMIT.B1_FILE_DD) >= '2020-01-01'
+        AND B1PERMIT.B1_ALT_ID = '2024-MSS-RES-00082'
+),
+PermitWithProject AS (
+    SELECT 
+        fp.B1_ALT_ID AS Permit_ID,
+        fp.Permit_Type,
+        pt.Project_Type,
+        fp.B1_PER_ID1,
+        fp.B1_PER_ID2,
+        fp.B1_PER_ID3
+    FROM FilteredPermits fp
+    LEFT JOIN ProjectTypeCTE pt
+        ON pt.B1_PER_ID1 = fp.B1_PER_ID1
+        AND pt.B1_PER_ID2 = fp.B1_PER_ID2
+        AND pt.B1_PER_ID3 = fp.B1_PER_ID3
+    WHERE pt.Project_Type != 'Not Assigned'
+),
+AllEvents AS (
+    -- Existing GPROCESS_HISTORY entries
+    SELECT 
+        p.Permit_ID,
+        p.Permit_Type,
+        p.Project_Type,
+        gh.SD_PRO_DES, 
+        gh.SD_APP_DES,
+        gh.SD_APP_DD,
+        gh.REC_DATE,
+        'GPROCESS_HISTORY RECORD' AS SOURCE
+    FROM PermitWithProject p
+    JOIN GPROCESS_HISTORY gh
+        ON gh.B1_PER_ID1 = p.B1_PER_ID1
+        AND gh.B1_PER_ID2 = p.B1_PER_ID2
+        AND gh.B1_PER_ID3 = p.B1_PER_ID3
+
+    UNION ALL
+
+   SELECT 
+        p.Permit_ID,
+        p.Permit_Type,
+        p.Project_Type,
+        sh.Type AS SD_PRO_DES,  
+        CASE 
+            WHEN sh.STATUS = 'Open' AND sh.rn = 2 
+            THEN 'Fee Paid'
+            ELSE sh.STATUS
+        END AS SD_APP_DES,
+        sh.STATUS_DATE AS SD_APP_DD,
+        CASE 
+            WHEN sh.STATUS = 'Open' AND sh.rn = 2
+            THEN DATEADD(SECOND, -1, sh.REC_DATE)
+            ELSE sh.REC_DATE
+        END AS REC_DATE,
+        'STATUS_HISTORY RECORD' AS SOURCE
+    FROM PermitWithProject p
+    JOIN (
+        SELECT *,
+            ROW_NUMBER() OVER (
+                PARTITION BY B1_PER_ID1, B1_PER_ID2, B1_PER_ID3, STATUS 
+                ORDER BY REC_DATE
+            ) as rn
+        FROM STATUS_HISTORY
+        WHERE STATUS NOT IN ('Approved', 'Issued')
+    ) sh
+        ON sh.B1_PER_ID1 = p.B1_PER_ID1
+        AND sh.B1_PER_ID2 = p.B1_PER_ID2
+        AND sh.B1_PER_ID3 = p.B1_PER_ID3
+    WHERE sh.STATUS = 'Open' OR sh.STATUS = 'Waiting Review Fee'
+),
+LabeledEvents AS (
+    SELECT *,
+        CASE 
+            -- City is reviewing/processing
+            WHEN SD_PRO_DES = 'APPLICATION' AND SD_APP_DES IN ('Open', 'Fee Paid') THEN 'City'
+            WHEN SD_PRO_DES = 'Application Document Review' AND SD_APP_DES = 'Accepted for Review' THEN 'City'
+            WHEN SD_PRO_DES = 'Application Intake' AND SD_APP_DES IN ('Complete', 'Addressing Required') THEN 'City'
+            WHEN SD_PRO_DES = 'Addressing' AND SD_APP_DES IN ('In Process', 'Complete') THEN 'City'
+            WHEN SD_PRO_DES = 'Review Consolidation' AND SD_APP_DES IN ('Resubmittal Received', 'Ready for Consolidation', 'Complete') THEN 'City'
+            WHEN SD_PRO_DES = 'Permit Approval' AND SD_APP_DES = 'Approved' THEN 'City'
+            
+            -- Applicant's turn to respond/provide information
+            WHEN SD_PRO_DES = 'Application Document Review' AND SD_APP_DES = 'Documents Rejected' THEN 'Applicant'
+            WHEN SD_PRO_DES = 'Application Intake' AND SD_APP_DES = 'Review Fee Required' THEN 'Applicant'
+            WHEN SD_PRO_DES = 'APPLICATION' AND SD_APP_DES = 'Waiting Review Fee' THEN 'Applicant'
+            WHEN SD_PRO_DES = 'Review Consolidation' AND SD_APP_DES = 'Resubmittal Required' THEN 'Applicant'
+
+            -- The permit has been Issued, and what follows doesn't have a responsible party
+            WHEN SD_PRO_DES = 'Issue Permit' AND SD_APP_DES = 'Issued' THEN 'None'
+            WHEN SD_PRO_DES = 'Final Engineering Review' AND SD_APP_DES = 'Temporary C of O'  THEN 'None'            
+            
+            -- If anything else is present, attribute to the city
+            ELSE 'City'
+        END AS Responsibility
+    FROM AllEvents
+),
+FinalWithCyclePoints AS (
+    SELECT *,
+        LAG(Responsibility) OVER (PARTITION BY Permit_ID ORDER BY REC_DATE) AS Prev_Responsibility,
+        CASE 
+            WHEN LAG(Responsibility) OVER (PARTITION BY Permit_ID ORDER BY REC_DATE) IS NULL THEN 'Start'
+            WHEN LAG(Responsibility) OVER (PARTITION BY Permit_ID ORDER BY REC_DATE) != Responsibility 
+                THEN 'Breakpoint'
+            ELSE NULL
+        END AS CyclePoint
+    FROM LabeledEvents
+),
+CycleAssigned AS (
+    SELECT *,
+        SUM(
+            CASE 
+                WHEN CyclePoint = 'Breakpoint' AND Responsibility = 'City' THEN 1
+                ELSE 0
+            END
+        ) OVER (PARTITION BY Permit_ID ORDER BY REC_DATE ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS Cycle_Number
+    FROM FinalWithCyclePoints
+)
+SELECT 
+    Permit_ID,
+    Permit_Type,
+    Project_Type,
+    SD_PRO_DES,
+    SD_APP_DES,
+    SD_APP_DD,
+    REC_DATE,
+    SOURCE,
+    Responsibility,
+    CyclePoint,
+    Cycle_Number
+FROM CycleAssigned
+ORDER BY Permit_ID, REC_DATE;

@@ -16,12 +16,7 @@ WITH FILTERED_PERMITS AS (
         AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction')
         AND B1_APPL_CLASS = 'COMPLETE'
         AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn', 'Refunded')
-        AND CONVERT(DATE, B1PERMIT.B1_FILE_DD) >= '2020-01-01'
-        AND B1PERMIT.B1_ALT_ID IN ('2023-MSS-RES-00728', 
-                                    '2023-MSS-RES-00245',
-                                    '2021-MSS-RES-00646',
-                                    '2021-MSS-RES-01014',
-                                    '2023-MSS-RES-00052')
+        AND YEAR(CONVERT(DATE, B1PERMIT.B1_FILE_DD)) >= YEAR(GETDATE()) - 7
 ),
 PERMIT_TYPE AS (
     SELECT
@@ -158,13 +153,15 @@ PERMIT_DETAILS AS (
         FILTERED_PERMITS.B1_ALT_ID,
         FILTERED_PERMITS.B1_PER_TYPE,
         PERMIT_TYPE.PERMIT_TYPE_x,
-        PROJECT_TYPE.Project_Type
+        CASE 
+            WHEN PROJECT_TYPE.Project_Type IS NULL THEN 'Addition/Remodel'
+            ELSE PROJECT_TYPE.Project_Type END AS Project_Type
     FROM FILTERED_PERMITS
-    JOIN PERMIT_TYPE
+    LEFT JOIN PERMIT_TYPE
         ON FILTERED_PERMITS.B1_PER_ID1 = PERMIT_TYPE.B1_PER_ID1
         AND FILTERED_PERMITS.B1_PER_ID2 = PERMIT_TYPE.B1_PER_ID2
         AND FILTERED_PERMITS.B1_PER_ID3 = PERMIT_TYPE.B1_PER_ID3
-    JOIN PROJECT_TYPE
+    LEFT JOIN PROJECT_TYPE
         ON FILTERED_PERMITS.B1_PER_ID1 = PROJECT_TYPE.B1_PER_ID1
         AND FILTERED_PERMITS.B1_PER_ID2 = PROJECT_TYPE.B1_PER_ID2
         AND FILTERED_PERMITS.B1_PER_ID3 = PROJECT_TYPE.B1_PER_ID3
@@ -187,10 +184,6 @@ Initial_Calculations AS (
             PARTITION BY FILTERED_PERMITS.B1_ALT_ID 
             ORDER BY ALL_ROW_HISTORY.PROCESS_DATE
         ), ALL_ROW_HISTORY.PROCESS_DATE) / 86400.0) AS PROCESS_DAYS_OPEN,
-        CONVERT(DECIMAL(10,6), DATEDIFF(SECOND, ALL_ROW_HISTORY.PROCESS_DATE, LEAD(ALL_ROW_HISTORY.PROCESS_DATE, 1) OVER (
-            PARTITION BY FILTERED_PERMITS.B1_ALT_ID 
-            ORDER BY ALL_ROW_HISTORY.PROCESS_DATE
-        )) / 86400.0) AS Days_With_Responsible_Party,
         CONVERT(DECIMAL(10,6), DATEDIFF(SECOND, LAG(ALL_ROW_HISTORY.PROCESS_DATE, 1) OVER (
             PARTITION BY FILTERED_PERMITS.B1_ALT_ID 
             ORDER BY ALL_ROW_HISTORY.PROCESS_DATE
@@ -210,6 +203,10 @@ Next_Calculations AS (
             PARTITION BY Initial_Calculations.B1_ALT_ID
             ORDER BY Initial_Calculations.PROCESS_DATE
         ) AS PROCESS_DAYS_OPEN_PREVIOUS,
+        LEAD(Initial_Calculations.PROCESS_DAYS_OPEN, 1) OVER (
+            PARTITION BY Initial_Calculations.B1_ALT_ID
+            ORDER BY Initial_Calculations.PROCESS_DATE
+        ) - Initial_Calculations.PROCESS_DAYS_OPEN AS Days_With_Responsible_Party,
         CASE 
             WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 'Intake Cycle'
             WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') AND
@@ -264,7 +261,24 @@ Next_Calculations AS (
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             ) = 3 THEN 'Post-Review'
             ELSE NULL
-        END AS Filled_Change_Cycle
+        END AS Filled_Change_Cycle,
+        -- Get the permit open date (first record for each permit)
+        FIRST_VALUE(Initial_Calculations.PROCESS_DATE) OVER (
+            PARTITION BY Initial_Calculations.B1_ALT_ID
+            ORDER BY Initial_Calculations.PROCESS_DATE
+            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        ) AS Permit_Open_Date,
+        -- Get the permit issued date (if exists)
+        MAX(CASE 
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' 
+                AND Initial_Calculations.PROCESS_STATUS = 'Issued' 
+            THEN Initial_Calculations.PROCESS_DATE 
+            ELSE NULL
+        END) OVER (
+            PARTITION BY Initial_Calculations.B1_ALT_ID
+            ORDER BY Initial_Calculations.PROCESS_DATE
+            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        ) AS Permit_Issued_Date
     FROM Initial_Calculations
 ),
 Cycle_Calculations AS (
@@ -280,30 +294,87 @@ Cycle_Calculations AS (
         Next_Calculations
 ),
 FINAL_BUILDING_PERMIT_METRICS AS (
-    SELECT * FROM Cycle_Calculations
+    SELECT
+        Cycle_Calculations.B1_ALT_ID AS Permit_ID,
+        PERMIT_DETAILS.B1_PER_TYPE AS Permit_Type,
+        PERMIT_DETAILS.PERMIT_TYPE_x AS Permit_Subtype,
+        PERMIT_DETAILS.Project_Type AS Project_Type,
+        MONTH(Cycle_Calculations.Permit_Open_Date) AS Permit_Open_Month,
+        YEAR(Cycle_Calculations.Permit_Open_Date) AS Permit_Open_Year,
+        MONTH(Cycle_Calculations.Permit_Issued_Date) AS Permit_Issued_Month,
+        YEAR(Cycle_Calculations.Permit_Issued_Date) AS Permit_Issued_Year,
+        Cycle_Calculations.Filled_Change_Cycle AS Cycle,
+        CASE 
+            WHEN Cycle_Calculations.Filled_Change_Cycle = 'Intake Cycle' THEN 1
+            WHEN Cycle_Calculations.Filled_Change_Cycle = 'Review Cycle' THEN 2
+            WHEN Cycle_Calculations.Filled_Change_Cycle = 'Post-Review' THEN 3
+            ELSE NULL
+            END AS Cycle_ID,
+        CASE 
+            WHEN Cycle_Calculations.Cycle_Number >= 5 THEN '5+'
+            ELSE CAST(Cycle_Calculations.Cycle_Number AS VARCHAR(2))
+            END AS Cycle_Number,
+        Cycle_Calculations.PROCESS_DESCRIPTION AS Process_Description, 
+        Cycle_Calculations.PROCESS_STATUS AS Process_Status,
+        Cycle_Calculations.PROCESS_DATE AS Process_Date,
+        Cycle_Calculations.RESPONSIBLE_PARTY AS Responsible_Party,
+        CASE 
+            WHEN Cycle_Calculations.RESPONSIBLE_PARTY = 'Applicant' THEN 1
+            WHEN Cycle_Calculations.RESPONSIBLE_PARTY = 'City' THEN 2
+            ELSE NULL
+            END AS Responsible_Party_ID,
+        Cycle_Calculations.RESPONSIBLE_PARTY_DEPARTMENT AS Responsible_Party_Department,
+        Cycle_Calculations.RESPONSIBLE_PARTY_NAME AS Responsible_Party_Name,
+        Cycle_Calculations.PROCESS_DAYS_OPEN AS Process_Days_Start,
+        Cycle_Calculations.PROCESS_DAYS_OPEN_PREVIOUS AS Process_Days_End,
+        Cycle_Calculations.Days_With_Responsible_Party AS Days_In_Process
+    FROM
+        Cycle_Calculations
+    LEFT JOIN
+        PERMIT_DETAILS
+            ON Cycle_Calculations.B1_PER_ID1 = PERMIT_DETAILS.B1_PER_ID1
+            AND Cycle_Calculations.B1_PER_ID2 = PERMIT_DETAILS.B1_PER_ID2
+            AND Cycle_Calculations.B1_PER_ID3 = PERMIT_DETAILS.B1_PER_ID3
+    WHERE 
+         YEAR(Cycle_Calculations.Permit_Open_Date) >= YEAR(GETDATE()) - 7
+            AND YEAR(Cycle_Calculations.Permit_Issued_Date) >= YEAR(GETDATE()) - 5
 )
 SELECT
-    FINAL_BUILDING_PERMIT_METRICS.B1_ALT_ID,
-    PERMIT_DETAILS.B1_PER_TYPE,
-    PERMIT_DETAILS.PERMIT_TYPE_x,
-    PERMIT_DETAILS.Project_Type,
-    FINAL_BUILDING_PERMIT_METRICS.PROCESS_DESCRIPTION, 
-    FINAL_BUILDING_PERMIT_METRICS.PROCESS_STATUS,
-    FINAL_BUILDING_PERMIT_METRICS.PROCESS_DATE,
-    FINAL_BUILDING_PERMIT_METRICS.RESPONSIBLE_PARTY,
-    FINAL_BUILDING_PERMIT_METRICS.RESPONSIBLE_PARTY_DEPARTMENT,
-    FINAL_BUILDING_PERMIT_METRICS.RESPONSIBLE_PARTY_NAME,
-    FINAL_BUILDING_PERMIT_METRICS.PROCESS_DAYS_OPEN,
-    FINAL_BUILDING_PERMIT_METRICS.PROCESS_DAYS_OPEN_PREVIOUS,
-    FINAL_BUILDING_PERMIT_METRICS.Days_With_Responsible_Party,
-    FINAL_BUILDING_PERMIT_METRICS.Days_With_Responsible_Party_Previous,
-    FINAL_BUILDING_PERMIT_METRICS.Filled_Change_Cycle,
-    FINAL_BUILDING_PERMIT_METRICS.Cycle_Number
+    FBMC.Permit_ID,
+    FBMC.Permit_Type,
+    FBMC.Permit_Subtype,
+    FBMC.Project_Type,
+    FBMC.Permit_Open_Year,
+    FBMC.Permit_Open_Month,
+    FBMC.Permit_Issued_Year,
+    FBMC.Permit_Issued_Month,
+    FBMC.Cycle,
+    FBMC.Cycle_ID,
+    FBMC.Cycle_Number,
+    FBMC.Responsible_Party,
+    FBMC.Responsible_Party_ID,
+    MIN(FBMC.Process_Days_Start) AS Min_Days_Responsible_Party_Open,
+    MAX(FBMC.Process_Days_End) AS Max_Days_Responsible_Party_Open,
+    SUM(FBMC.Days_In_Process) AS Days_Responsible_Party_Open
 FROM
-    FINAL_BUILDING_PERMIT_METRICS
-LEFT JOIN
-    PERMIT_DETAILS
-        ON FINAL_BUILDING_PERMIT_METRICS.B1_PER_ID1 = PERMIT_DETAILS.B1_PER_ID1
-        AND FINAL_BUILDING_PERMIT_METRICS.B1_PER_ID2 = PERMIT_DETAILS.B1_PER_ID2
-        AND FINAL_BUILDING_PERMIT_METRICS.B1_PER_ID3 = PERMIT_DETAILS.B1_PER_ID3
+    FINAL_BUILDING_PERMIT_METRICS FBMC
+GROUP BY
+    FBMC.Permit_ID,
+    FBMC.Permit_Type,
+    FBMC.Permit_Subtype,
+    FBMC.Project_Type,
+    FBMC.Permit_Open_Year,
+    FBMC.Permit_Open_Month,
+    FBMC.Permit_Issued_Year,
+    FBMC.Permit_Issued_Month,
+    FBMC.Cycle,
+    FBMC.Cycle_ID,
+    FBMC.Cycle_Number,
+    FBMC.Responsible_Party,
+    FBMC.Responsible_Party_ID
+ORDER BY
+    FBMC.Permit_ID DESC,
+    FBMC.Cycle_ID,
+    FBMC.Cycle_Number,
+    FBMC.Responsible_Party_ID
 OPTION (HASH JOIN)

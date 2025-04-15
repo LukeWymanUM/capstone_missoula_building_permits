@@ -1,0 +1,454 @@
+/*
+The following query is used to support the building permit operational insights
+dashboard. Each row in the final output represents the time a department held 
+a specific permit within the review cycle. At the current level, any 
+aggregations and calculations would be based around ownership of the permit
+within cycles. This is important for more than a few data visualizations
+required by the dashboard.
+
+The data included both issued and non-issued permits, meaning this data set 
+includes both issued and non-issued permits. This allows for creation of 
+visualizations relevant to showcasing active permits
+
+When the data ends up in ArcGIS, the data can be further aggregated by using
+data expressions, specifically by dropping detail, such as by consolidating 
+to only see time for an entire permit process. Any reduction in dimensionality 
+should be done on non-permit-specific data, i.e. permit cycle or months because
+permit details like this are included as filters for the dashboard. So, data 
+expressions can be used to abstract out the cycles and responsible parties. 
+*/
+WITH
+FILTERED_PERMITS AS (
+    SELECT -- filter the data to only include permits relevant for dashboard
+        B1PERMIT.B1_PER_ID1,
+        B1PERMIT.B1_PER_ID2,
+        B1PERMIT.B1_PER_ID3,
+        B1PERMIT.B1_ALT_ID,
+        CASE 
+            WHEN B1PERMIT.B1_PER_TYPE = 'Residential Construction' THEN 'Residential'
+            WHEN B1PERMIT.B1_PER_TYPE = 'Commercial Construction' THEN 'Commercial'
+            ELSE 'Unknown'
+        END AS B1_PER_TYPE
+    FROM 
+        B1PERMIT
+    WHERE 
+        B1PERMIT.B1_PER_GROUP = 'Building' -- building permits
+        AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction') -- residential and commercial construction
+        AND B1_APPL_CLASS = 'COMPLETE' -- complete permits (no TEMPs)
+        AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn', 'Refunded') -- not closed, withdrawn, or refunded
+        AND YEAR(CONVERT(DATE, B1PERMIT.B1_FILE_DD)) >= YEAR(GETDATE()) - 7 -- permits filed in last 7 years
+),
+PERMIT_TYPE AS (
+    SELECT -- get the permit type from the checklist
+        BCHCKBOX.B1_PER_ID1,
+        BCHCKBOX.B1_PER_ID2,
+        BCHCKBOX.B1_PER_ID3,
+        MIN(BCHCKBOX.B1_CHECKLIST_COMMENT) AS PERMIT_TYPE_x
+    FROM 
+        BCHCKBOX
+    JOIN 
+        FILTERED_PERMITS 
+            ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    WHERE 
+        BCHCKBOX.B1_CHECKBOX_DESC IN ('Commercial Subtype', 'Residential Subtype')
+    GROUP BY 
+        BCHCKBOX.B1_PER_ID1, 
+        BCHCKBOX.B1_PER_ID2, 
+        BCHCKBOX.B1_PER_ID3
+),
+PROJECT_TYPE AS (
+    SELECT -- get the project type from the checklist
+        BCHCKBOX.B1_PER_ID1,
+        BCHCKBOX.B1_PER_ID2,
+        BCHCKBOX.B1_PER_ID3,
+        CASE
+            WHEN BCHCKBOX.B1_CHECKLIST_COMMENT = 'CHECKED' THEN 'New Construction'
+            ELSE 'Addition/Remodel'
+        END AS Project_Type
+    FROM 
+        BCHCKBOX
+    JOIN 
+        FILTERED_PERMITS 
+            ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    WHERE 
+        BCHCKBOX.B1_CHECKBOX_DESC = 'New Construction' -- if no row for new construction, then null is later filled in with addition/remodel
+),
+PROCESS_CODE AS (
+    SELECT DISTINCT
+        GPROCESS_HISTORY.B1_PER_ID1,
+        GPROCESS_HISTORY.B1_PER_ID2,
+        GPROCESS_HISTORY.B1_PER_ID3,
+        GPROCESS_HISTORY.R1_PROCESS_CODE AS Process_Code
+    FROM 
+        GPROCESS_HISTORY
+    JOIN 
+        FILTERED_PERMITS
+            ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+),
+GPROCESS_HISTORY_ROWS AS (
+    SELECT -- select the data from the gprocess history table
+        GPROCESS_HISTORY.B1_PER_ID1,
+        GPROCESS_HISTORY.B1_PER_ID2,
+        GPROCESS_HISTORY.B1_PER_ID3,
+        FILTERED_PERMITS.B1_ALT_ID,
+        GPROCESS_HISTORY.SD_PRO_DES AS PROCESS_DESCRIPTION,
+        GPROCESS_HISTORY.SD_APP_DES AS PROCESS_STATUS,
+        GPROCESS_HISTORY.REC_DATE AS PROCESS_DATE,
+        CASE -- a simple determination of responsible party based on process description and status
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Application Document Review'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Documents Rejected' THEN 'Applicant'
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Review Consolidation'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Resubmittal Required' THEN 'Applicant'
+            WHEN GPROCESS_HISTORY.SD_AGENCY_CODE IN ('CITY', 'NA', 'AMS', 'HEALTH') THEN 'City'
+            ELSE 'Unknown'
+        END AS RESPONSIBLE_PARTY, 
+        CASE -- a simple determination of responsible party department based on process description and status
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Application Document Review'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Documents Rejected' THEN 'Applicant'
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Review Consolidation'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Resubmittal Required' THEN 'Applicant'
+            ELSE GPROCESS_HISTORY.SD_BUREAU_CODE
+        END AS RESPONSIBLE_PARTY_DEPARTMENT,
+        CASE -- a simple determination of responsible party name based on process description and status
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Application Document Review'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Documents Rejected' THEN 'Applicant'
+            WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Review Consolidation'
+                AND GPROCESS_HISTORY.SD_APP_DES = 'Resubmittal Required' THEN 'Applicant'
+            ELSE GPROCESS_HISTORY.G6_ISS_FNAME + ' ' + GPROCESS_HISTORY.G6_ISS_LNAME
+        END AS RESPONSIBLE_PARTY_NAME,
+        'GPROCESS_HISTORY' AS SOURCE
+    FROM 
+        GPROCESS_HISTORY
+    JOIN 
+        FILTERED_PERMITS 
+            ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+),
+STATUS_HISTORY_ROWS AS (
+    SELECT -- select the data from the status history table
+        STATUS_HISTORY.B1_PER_ID1,
+        STATUS_HISTORY.B1_PER_ID2,
+        STATUS_HISTORY.B1_PER_ID3,
+        FILTERED_PERMITS.B1_ALT_ID,
+        STATUS_HISTORY.TYPE AS PROCESS_DESCRIPTION,
+        STATUS_HISTORY.STATUS AS PROCESS_STATUS,
+        CASE -- remove a second to the application being opened to fix a data sync timing issue
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION' 
+                AND STATUS_HISTORY.STATUS = 'Open' THEN DATEADD(SECOND, -1, STATUS_HISTORY.REC_DATE)
+                ELSE STATUS_HISTORY.REC_DATE 
+        END AS PROCESS_DATE,
+        CASE -- a simple determination of responsible party based on process description and status
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Waiting Review Fee' THEN 'Applicant'
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Open' THEN 'City'
+            WHEN STATUS_HISTORY.ACTBY_AGENCY_CODE IN ('CITY', 'NA', 'AMS') THEN 'City'
+            WHEN STATUS_HISTORY.ACTBY_AGENCY_CODE IS NULL THEN 'Applicant'
+            ELSE 'Unknown'
+        END AS RESPONSIBLE_PARTY,
+        CASE -- a simple determination of responsible party department based on process description and status
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Waiting Review Fee' THEN 'Applicant'
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Open' THEN 'P&LUSE'
+            WHEN STATUS_HISTORY.ACTBY_BUREAU_CODE IS NOT NULL THEN STATUS_HISTORY.ACTBY_BUREAU_CODE
+            ELSE 'Unknown'
+        END AS RESPONSIBLE_PARTY_DEPARTMENT,
+        CASE -- a simple determination of responsible party name based on process description and status
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Waiting Review Fee' THEN 'Applicant'
+            WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
+                AND STATUS_HISTORY.STATUS = 'Open' THEN 'Krystal Aucutt'
+            WHEN STATUS_HISTORY.ACTBY_FNAME IS NOT NULL 
+                OR STATUS_HISTORY.ACTBY_LNAME IS NOT NULL THEN STATUS_HISTORY.ACTBY_FNAME + ' ' + STATUS_HISTORY.ACTBY_LNAME
+            ELSE 'Unknown'
+        END AS RESPONSIBLE_PARTY_NAME,
+        'STATUS_HISTORY' AS SOURCE
+    FROM 
+        STATUS_HISTORY
+    JOIN 
+        FILTERED_PERMITS
+            ON STATUS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND STATUS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND STATUS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    WHERE STATUS_HISTORY.STATUS != 'Expired'
+),
+PERMIT_DETAILS AS (
+    SELECT -- bring together the permit data with the permit type and project type
+        FILTERED_PERMITS.B1_PER_ID1,
+        FILTERED_PERMITS.B1_PER_ID2,
+        FILTERED_PERMITS.B1_PER_ID3,
+        FILTERED_PERMITS.B1_ALT_ID,
+        FILTERED_PERMITS.B1_PER_TYPE,
+        PERMIT_TYPE.PERMIT_TYPE_x,
+        CASE -- if no row for new construction, then null is filled in with addition/remodel
+            WHEN PROJECT_TYPE.Project_Type IS NULL THEN 'Addition/Remodel'
+            ELSE PROJECT_TYPE.Project_Type 
+        END AS Project_Type,
+        PROCESS_CODE.Process_Code
+    FROM FILTERED_PERMITS
+    LEFT JOIN PERMIT_TYPE
+        ON FILTERED_PERMITS.B1_PER_ID1 = PERMIT_TYPE.B1_PER_ID1
+        AND FILTERED_PERMITS.B1_PER_ID2 = PERMIT_TYPE.B1_PER_ID2
+        AND FILTERED_PERMITS.B1_PER_ID3 = PERMIT_TYPE.B1_PER_ID3
+    LEFT JOIN PROJECT_TYPE
+        ON FILTERED_PERMITS.B1_PER_ID1 = PROJECT_TYPE.B1_PER_ID1
+        AND FILTERED_PERMITS.B1_PER_ID2 = PROJECT_TYPE.B1_PER_ID2
+        AND FILTERED_PERMITS.B1_PER_ID3 = PROJECT_TYPE.B1_PER_ID3
+    LEFT JOIN PROCESS_CODE
+        ON FILTERED_PERMITS.B1_PER_ID1 = PROCESS_CODE.B1_PER_ID1
+        AND FILTERED_PERMITS.B1_PER_ID2 = PROCESS_CODE.B1_PER_ID2
+        AND FILTERED_PERMITS.B1_PER_ID3 = PROCESS_CODE.B1_PER_ID3
+),
+ALL_ROW_HISTORY AS (
+    SELECT -- bring together the gprocess history and status history data
+        * 
+    FROM 
+        GPROCESS_HISTORY_ROWS
+    UNION ALL
+    SELECT 
+        *
+    FROM 
+        STATUS_HISTORY_ROWS
+),
+Initial_Calculations AS (
+    SELECT -- calculate the number of days the permit was open and the number of days the responsible party was responsible
+        ALL_ROW_HISTORY.*,
+        CONVERT(DECIMAL(10,6), DATEDIFF(SECOND, LAG(ALL_ROW_HISTORY.PROCESS_DATE, 1) OVER (
+            PARTITION BY FILTERED_PERMITS.B1_ALT_ID 
+            ORDER BY ALL_ROW_HISTORY.PROCESS_DATE
+        ), ALL_ROW_HISTORY.PROCESS_DATE) / 86400.0) AS Days_With_Responsible_Party_Previous
+    FROM
+        ALL_ROW_HISTORY 
+    JOIN 
+        FILTERED_PERMITS
+            ON ALL_ROW_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+            AND ALL_ROW_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+            AND ALL_ROW_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+),
+Next_Calculations AS (
+    SELECT -- move the current and previous process days open to the next row
+        Initial_Calculations.*,
+        CASE -- determine the cycle based on the process description and status
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') 
+                AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 'Review Cycle'
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' 
+                AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 'Post-Review'
+            ELSE 'Intake Cycle'
+        END AS Change_Cycle,
+        CASE -- determine the change cycle id that can be used for sorting
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') 
+                AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' 
+                AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+            ELSE 1
+        END AS Cycle_ID,
+        CASE -- fill in the change cycle based on the change cycle id
+            WHEN MAX(CASE 
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') 
+                    AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                ELSE 1
+            END) OVER (
+                PARTITION BY Initial_Calculations.B1_ALT_ID
+                ORDER BY Initial_Calculations.PROCESS_DATE
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) = 1 THEN 'Intake Cycle'
+            WHEN MAX(CASE 
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') 
+                    AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                ELSE 1
+            END) OVER (
+                PARTITION BY Initial_Calculations.B1_ALT_ID
+                ORDER BY Initial_Calculations.PROCESS_DATE
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) = 2 THEN 'Review Cycle'
+            WHEN MAX(CASE 
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing')
+                    AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit'
+                    AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                ELSE 1
+            END) OVER (
+                PARTITION BY Initial_Calculations.B1_ALT_ID
+                ORDER BY Initial_Calculations.PROCESS_DATE
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) = 3 THEN 'Post-Review'
+            ELSE NULL
+        END AS Filled_Change_Cycle,
+        FIRST_VALUE(Initial_Calculations.PROCESS_DATE) OVER ( -- get the permit open date (first record for each permit)
+            PARTITION BY Initial_Calculations.B1_ALT_ID
+            ORDER BY Initial_Calculations.PROCESS_DATE
+            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        ) AS Permit_Open_Date,
+        MAX(CASE -- get the permit issued date (if exists or ends up being null)
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' 
+                AND Initial_Calculations.PROCESS_STATUS = 'Issued' 
+            THEN Initial_Calculations.PROCESS_DATE 
+            ELSE NULL
+        END) OVER (
+            PARTITION BY Initial_Calculations.B1_ALT_ID
+            ORDER BY Initial_Calculations.PROCESS_DATE
+            ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+        ) AS Permit_Issued_Date
+    FROM 
+        Initial_Calculations
+),
+Cycle_Calculations AS (
+    SELECT -- calculate the cycle number by counting the times we see applicant
+        Next_Calculations.*,
+        1 + SUM(CASE
+            WHEN Next_Calculations.RESPONSIBLE_PARTY = 'Applicant' THEN 1 
+            ELSE 0 
+        END) OVER (
+            PARTITION BY Next_Calculations.B1_PER_ID1,
+                Next_Calculations.B1_PER_ID2,
+                Next_Calculations.B1_PER_ID3,
+                Next_Calculations.Filled_Change_Cycle
+            ORDER BY Next_Calculations.PROCESS_DATE
+            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS Cycle_Number,
+        CASE -- use the cycle id to get the current processing status based on our assignment logic
+            WHEN MAX(Next_Calculations.Cycle_ID) OVER (PARTITION BY Next_Calculations.B1_ALT_ID) = 3 THEN 'Post-Review'
+            WHEN MAX(Next_Calculations.Cycle_ID) OVER (PARTITION BY Next_Calculations.B1_ALT_ID) = 2 THEN 'Review Cycle'
+            WHEN MAX(Next_Calculations.Cycle_ID) OVER (PARTITION BY Next_Calculations.B1_ALT_ID) = 1 THEN 'Intake Cycle'
+            ELSE 'Unknown'
+        END AS Current_Process_Status
+    FROM 
+        Next_Calculations
+),
+FINAL_BUILDING_PERMIT_METRICS AS (
+    SELECT -- calculate the final metrics and make the final assignments
+        Cycle_Calculations.B1_ALT_ID AS Permit_ID,
+        PERMIT_DETAILS.B1_PER_TYPE AS Permit_Type,
+        PERMIT_DETAILS.PERMIT_TYPE_x AS Permit_Subtype,
+        PERMIT_DETAILS.Project_Type AS Project_Type,
+        MONTH(Cycle_Calculations.Permit_Open_Date) AS Permit_Open_Month,
+        YEAR(Cycle_Calculations.Permit_Open_Date) AS Permit_Open_Year,
+        MONTH(Cycle_Calculations.Permit_Issued_Date) AS Permit_Issued_Month,
+        YEAR(Cycle_Calculations.Permit_Issued_Date) AS Permit_Issued_Year,
+        Cycle_Calculations.Filled_Change_Cycle AS Cycle,
+        CASE -- clean up the cycle number to avoid showing anything over 5 review cycles
+            WHEN Cycle_Calculations.Cycle_Number >= 5 THEN '5+'
+            ELSE CAST(Cycle_Calculations.Cycle_Number AS VARCHAR(2))
+        END AS Cycle_Number,
+        Cycle_Calculations.PROCESS_DESCRIPTION AS Process_Description, 
+        Cycle_Calculations.PROCESS_STATUS AS Process_Status,
+        Cycle_Calculations.PROCESS_DATE AS Process_Date, 
+        Cycle_Calculations.RESPONSIBLE_PARTY AS Responsible_Party,
+        Cycle_Calculations.RESPONSIBLE_PARTY_DEPARTMENT AS Responsible_Party_Department,
+        Cycle_Calculations.RESPONSIBLE_PARTY_NAME AS Responsible_Party_Name,
+        Cycle_Calculations.Current_Process_Status AS Current_Process_Status,
+        CONVERT(DECIMAL(10,6), DATEDIFF(SECOND, 
+            LAG(Cycle_Calculations.PROCESS_DATE) OVER (
+                PARTITION BY Cycle_Calculations.B1_ALT_ID
+                ORDER BY Cycle_Calculations.PROCESS_DATE
+            ),
+            Cycle_Calculations.PROCESS_DATE
+        ) / 86400.0) AS Days_Since_Last_Step,
+        CASE -- only calculate the days to review completion if one of following statuses
+            WHEN Cycle_Calculations.PROCESS_STATUS IN ('Complete', 'Additional Info Required', 'Resubmittal Required', 
+                'Ready for Consolidation', 'Resubmittal Accepted', 'Approved', 'Issued')
+            THEN CONVERT(DECIMAL(10,6), DATEDIFF(SECOND, 
+                FIRST_VALUE(Cycle_Calculations.PROCESS_DATE) OVER (
+                    PARTITION BY Cycle_Calculations.B1_ALT_ID, Cycle_Calculations.Cycle_Number
+                    ORDER BY Cycle_Calculations.PROCESS_DATE
+                ),
+                Cycle_Calculations.PROCESS_DATE
+            ) / 86400.0)
+            ELSE NULL
+        END AS Days_To_Review_Completion,
+        ROW_NUMBER() OVER ( 
+            PARTITION BY Cycle_Calculations.B1_ALT_ID, 
+                CASE WHEN Cycle_Calculations.PROCESS_DESCRIPTION = 'Review Consolidation' THEN 1 ELSE 0 END
+            ORDER BY Cycle_Calculations.PROCESS_DATE DESC
+        ) AS Process_Rank,
+        PERMIT_DETAILS.Process_Code
+    FROM
+        Cycle_Calculations
+    LEFT JOIN
+        PERMIT_DETAILS
+            ON Cycle_Calculations.B1_PER_ID1 = PERMIT_DETAILS.B1_PER_ID1
+            AND Cycle_Calculations.B1_PER_ID2 = PERMIT_DETAILS.B1_PER_ID2
+            AND Cycle_Calculations.B1_PER_ID3 = PERMIT_DETAILS.B1_PER_ID3
+    WHERE -- only include permits filed in the last 7 years and issued in the last 5 years, and only include rows relevant to team completion
+        YEAR(Cycle_Calculations.Permit_Open_Date) >= YEAR(GETDATE()) - 7
+            AND (Cycle_Calculations.Permit_Issued_Date IS NULL 
+                OR YEAR(Cycle_Calculations.Permit_Issued_Date) >= YEAR(GETDATE()) - 5)
+        AND Cycle_Calculations.Filled_Change_Cycle IN ('Review Cycle', 'Post-Review')
+        AND Cycle_Calculations.PROCESS_DESCRIPTION IN ('Electrical', 'Engineering', 'Environmental Health',
+            'Fire', 'Forestry', 'Issue Permit', 'Mechanical', 'Parks and Recreation', 'Parks and Trails', 
+            'Permit Approval', 'Planning', 'Plumbing', 'Review Consolidation', 'Sewer', 'Stormwater', 'Water', 'Water Quality')
+        AND Cycle_Calculations.PROCESS_STATUS NOT IN ('Resubmittal Received', 'Ready for Consolidation', 'Review Consolidation', 'Resubmittal Required')
+        AND NOT (Cycle_Calculations.PROCESS_DESCRIPTION = 'Engineering'
+            AND Cycle_Calculations.PROCESS_STATUS = 'Create Engineering Records')
+),
+FINAL_BUILDING_PERMIT_OPERATIONAL_INSIGHTS AS (
+SELECT -- select the final metrics
+    FBMC.Permit_ID,
+    FBMC.Permit_Type,
+    FBMC.Permit_Subtype,
+    FBMC.Project_Type,
+    FBMC.Current_Process_Status,
+    FBMC.Process_Code,
+    FBMC.Permit_Open_Year,
+    FBMC.Permit_Open_Month,
+    FBMC.Permit_Issued_Year,
+    FBMC.Permit_Issued_Month,
+    FBMC.Cycle_Number,
+    FBMC.Process_Description AS Process_Owner,
+    FBMC.Process_Status AS Process_Decision,
+    FBMC.Process_Date AS Process_Decision_Date,
+    FBMC.Responsible_Party_Department,
+    FBMC.Responsible_Party_Name,
+    FBMC.Days_To_Review_Completion,
+    CONVERT(DECIMAL(10,6), DATEDIFF(SECOND, -- get the days since the previous step to use ot replace for approval and issuance
+        LAG(FBMC.Process_Date) OVER (
+            PARTITION BY FBMC.Permit_ID
+            ORDER BY FBMC.Process_Date
+        ),
+        FBMC.Process_Date
+    ) / 86400.0) AS Days_Since_Previous_Step
+FROM
+    FINAL_BUILDING_PERMIT_METRICS FBMC
+)
+SELECT
+    FBPOI.Permit_ID,
+    FBPOI.Permit_Type,
+    FBPOI.Permit_Subtype,
+    FBPOI.Project_Type,
+    FBPOI.Current_Process_Status,
+    FBPOI.Process_Code,
+    FBPOI.Permit_Open_Year,
+    FBPOI.Permit_Open_Month,    
+    ISNULL(FBPOI.Permit_Issued_Year, '') AS Permit_Issued_Year,
+    ISNULL(FBPOI.Permit_Issued_Month, '') AS Permit_Issued_Month,
+    FBPOI.Cycle_Number,
+    FBPOI.Process_Owner,
+    FBPOI.Process_Decision,
+    FBPOI.Process_Decision_Date,
+    FBPOI.Responsible_Party_Department,
+    FBPOI.Responsible_Party_Name,
+    CASE -- replace the days to review completion with the days since the previous step if the process owner is permit approval or issue permit
+        WHEN (FBPOI.Process_Owner = 'Permit Approval' AND FBPOI.Process_Decision = 'Approved')
+            OR (FBPOI.Process_Owner = 'Issue Permit' AND FBPOI.Process_Decision = 'Issued') THEN FBPOI.Days_Since_Previous_Step
+        ELSE FBPOI.Days_To_Review_Completion
+    END AS Days_To_Review_Completion
+FROM
+    FINAL_BUILDING_PERMIT_OPERATIONAL_INSIGHTS FBPOI
+WHERE 
+    FBPOI.Days_To_Review_Completion > 0
+ORDER BY
+    FBPOI.Permit_ID DESC,
+    FBPOI.Process_Decision_Date
+OPTION (HASH JOIN)

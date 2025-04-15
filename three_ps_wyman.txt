@@ -5,6 +5,19 @@ Problems: What are you stuck on or struggling with?
 Plans: What do you intend to accomplish between now and next week’s post?
 Hours: How many hours did you spend working on your Capstone since last week’s
 post?
+
+------------------------------------------------------------
+
+---04/15/25---
+Progress: Done with pulling the data out of the database. Almost done with 
+dashboard 01, which means I only have dashboard 02, which should be the easiest
+to complete.
+Problem: No issues. Just have to stay focused.
+Plans: All of my development work will be done and I will have my presentation
+completed. As such, my digital product should get a lot of attention this week,
+too. Probably need to spend about 30 hours to get everything wrapped up.
+Hours: 35
+
 ------------------------------------------------------------
 
 ---04/08/25---
@@ -181,14 +194,6 @@ Hours: 3
 
 ------------------------------------------------------------
 END - SEE MOST RECENT ENTRY AT TOP
-------------------------------------------------------------
-
----04/15/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
 ------------------------------------------------------------
 
 ---04/22/25---

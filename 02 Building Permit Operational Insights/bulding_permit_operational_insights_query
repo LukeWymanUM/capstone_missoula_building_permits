@@ -17,9 +17,9 @@ should be done on non-permit-specific data, i.e. permit cycle or months because
 permit details like this are included as filters for the dashboard. So, data 
 expressions can be used to abstract out the cycles and responsible parties. 
 */
-WITH
-FILTERED_PERMITS AS (
-    SELECT -- filter the data to only include permits relevant for dashboard
+
+WITH FILTERED_PERMITS AS (
+    SELECT 
         B1PERMIT.B1_PER_ID1,
         B1PERMIT.B1_PER_ID2,
         B1PERMIT.B1_PER_ID3,
@@ -29,37 +29,34 @@ FILTERED_PERMITS AS (
             WHEN B1PERMIT.B1_PER_TYPE = 'Commercial Construction' THEN 'Commercial'
             ELSE 'Unknown'
         END AS B1_PER_TYPE
-    FROM 
-        B1PERMIT
-    WHERE 
-        B1PERMIT.B1_PER_GROUP = 'Building' -- building permits
+    FROM B1PERMIT
+    WHERE B1PERMIT.B1_PER_GROUP = 'Building' -- building permits
         AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction') -- residential and commercial construction
         AND B1_APPL_CLASS = 'COMPLETE' -- complete permits (no TEMPs)
         AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn', 'Refunded') -- not closed, withdrawn, or refunded
         AND YEAR(CONVERT(DATE, B1PERMIT.B1_FILE_DD)) >= YEAR(GETDATE()) - 7 -- permits filed in last 7 years
 ),
+
 PERMIT_TYPE AS (
-    SELECT -- get the permit type from the checklist
+    SELECT 
         BCHCKBOX.B1_PER_ID1,
         BCHCKBOX.B1_PER_ID2,
         BCHCKBOX.B1_PER_ID3,
         MIN(BCHCKBOX.B1_CHECKLIST_COMMENT) AS PERMIT_TYPE_x
-    FROM 
-        BCHCKBOX
-    JOIN 
-        FILTERED_PERMITS 
-            ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
-    WHERE 
-        BCHCKBOX.B1_CHECKBOX_DESC IN ('Commercial Subtype', 'Residential Subtype')
+    FROM BCHCKBOX
+    JOIN FILTERED_PERMITS 
+        ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    WHERE BCHCKBOX.B1_CHECKBOX_DESC IN ('Commercial Subtype', 'Residential Subtype')
     GROUP BY 
         BCHCKBOX.B1_PER_ID1, 
         BCHCKBOX.B1_PER_ID2, 
         BCHCKBOX.B1_PER_ID3
 ),
+
 PROJECT_TYPE AS (
-    SELECT -- get the project type from the checklist
+    SELECT 
         BCHCKBOX.B1_PER_ID1,
         BCHCKBOX.B1_PER_ID2,
         BCHCKBOX.B1_PER_ID3,
@@ -67,32 +64,29 @@ PROJECT_TYPE AS (
             WHEN BCHCKBOX.B1_CHECKLIST_COMMENT = 'CHECKED' THEN 'New Construction'
             ELSE 'Addition/Remodel'
         END AS Project_Type
-    FROM 
-        BCHCKBOX
-    JOIN 
-        FILTERED_PERMITS 
-            ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
-    WHERE 
-        BCHCKBOX.B1_CHECKBOX_DESC = 'New Construction' -- if no row for new construction, then null is later filled in with addition/remodel
+    FROM BCHCKBOX
+    JOIN FILTERED_PERMITS 
+        ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    WHERE BCHCKBOX.B1_CHECKBOX_DESC = 'New Construction' -- if no row for new construction, then null is later filled in with addition/remodel
 ),
+
 PROCESS_CODE AS (
     SELECT DISTINCT
         GPROCESS_HISTORY.B1_PER_ID1,
         GPROCESS_HISTORY.B1_PER_ID2,
         GPROCESS_HISTORY.B1_PER_ID3,
         GPROCESS_HISTORY.R1_PROCESS_CODE AS Process_Code
-    FROM 
-        GPROCESS_HISTORY
-    JOIN 
-        FILTERED_PERMITS
-            ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    FROM GPROCESS_HISTORY
+    JOIN FILTERED_PERMITS
+        ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
 ),
+
 GPROCESS_HISTORY_ROWS AS (
-    SELECT -- select the data from the gprocess history table
+    SELECT 
         GPROCESS_HISTORY.B1_PER_ID1,
         GPROCESS_HISTORY.B1_PER_ID2,
         GPROCESS_HISTORY.B1_PER_ID3,
@@ -108,14 +102,14 @@ GPROCESS_HISTORY_ROWS AS (
             WHEN GPROCESS_HISTORY.SD_AGENCY_CODE IN ('CITY', 'NA', 'AMS', 'HEALTH') THEN 'City'
             ELSE 'Unknown'
         END AS RESPONSIBLE_PARTY, 
-        CASE -- a simple determination of responsible party department based on process description and status
+        CASE 
             WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Application Document Review'
                 AND GPROCESS_HISTORY.SD_APP_DES = 'Documents Rejected' THEN 'Applicant'
             WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Review Consolidation'
                 AND GPROCESS_HISTORY.SD_APP_DES = 'Resubmittal Required' THEN 'Applicant'
             ELSE GPROCESS_HISTORY.SD_BUREAU_CODE
         END AS RESPONSIBLE_PARTY_DEPARTMENT,
-        CASE -- a simple determination of responsible party name based on process description and status
+        CASE 
             WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Application Document Review'
                 AND GPROCESS_HISTORY.SD_APP_DES = 'Documents Rejected' THEN 'Applicant'
             WHEN GPROCESS_HISTORY.SD_PRO_DES = 'Review Consolidation'
@@ -123,16 +117,15 @@ GPROCESS_HISTORY_ROWS AS (
             ELSE GPROCESS_HISTORY.G6_ISS_FNAME + ' ' + GPROCESS_HISTORY.G6_ISS_LNAME
         END AS RESPONSIBLE_PARTY_NAME,
         'GPROCESS_HISTORY' AS SOURCE
-    FROM 
-        GPROCESS_HISTORY
-    JOIN 
-        FILTERED_PERMITS 
-            ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    FROM GPROCESS_HISTORY
+    JOIN FILTERED_PERMITS 
+        ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
 ),
+
 STATUS_HISTORY_ROWS AS (
-    SELECT -- select the data from the status history table
+    SELECT 
         STATUS_HISTORY.B1_PER_ID1,
         STATUS_HISTORY.B1_PER_ID2,
         STATUS_HISTORY.B1_PER_ID3,
@@ -153,7 +146,7 @@ STATUS_HISTORY_ROWS AS (
             WHEN STATUS_HISTORY.ACTBY_AGENCY_CODE IS NULL THEN 'Applicant'
             ELSE 'Unknown'
         END AS RESPONSIBLE_PARTY,
-        CASE -- a simple determination of responsible party department based on process description and status
+        CASE 
             WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
                 AND STATUS_HISTORY.STATUS = 'Waiting Review Fee' THEN 'Applicant'
             WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
@@ -161,7 +154,7 @@ STATUS_HISTORY_ROWS AS (
             WHEN STATUS_HISTORY.ACTBY_BUREAU_CODE IS NOT NULL THEN STATUS_HISTORY.ACTBY_BUREAU_CODE
             ELSE 'Unknown'
         END AS RESPONSIBLE_PARTY_DEPARTMENT,
-        CASE -- a simple determination of responsible party name based on process description and status
+        CASE 
             WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
                 AND STATUS_HISTORY.STATUS = 'Waiting Review Fee' THEN 'Applicant'
             WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
@@ -171,15 +164,14 @@ STATUS_HISTORY_ROWS AS (
             ELSE 'Unknown'
         END AS RESPONSIBLE_PARTY_NAME,
         'STATUS_HISTORY' AS SOURCE
-    FROM 
-        STATUS_HISTORY
-    JOIN 
-        FILTERED_PERMITS
-            ON STATUS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND STATUS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND STATUS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    FROM STATUS_HISTORY
+    JOIN FILTERED_PERMITS
+        ON STATUS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND STATUS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND STATUS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
     WHERE STATUS_HISTORY.STATUS != 'Expired'
 ),
+
 PERMIT_DETAILS AS (
     SELECT -- bring together the permit data with the permit type and project type
         FILTERED_PERMITS.B1_PER_ID1,
@@ -207,34 +199,31 @@ PERMIT_DETAILS AS (
         AND FILTERED_PERMITS.B1_PER_ID2 = PROCESS_CODE.B1_PER_ID2
         AND FILTERED_PERMITS.B1_PER_ID3 = PROCESS_CODE.B1_PER_ID3
 ),
+
 ALL_ROW_HISTORY AS (
-    SELECT -- bring together the gprocess history and status history data
-        * 
-    FROM 
-        GPROCESS_HISTORY_ROWS
+    SELECT * 
+    FROM GPROCESS_HISTORY_ROWS
     UNION ALL
-    SELECT 
-        *
-    FROM 
-        STATUS_HISTORY_ROWS
+    SELECT * 
+    FROM STATUS_HISTORY_ROWS
 ),
+
 Initial_Calculations AS (
-    SELECT -- calculate the number of days the permit was open and the number of days the responsible party was responsible
+    SELECT 
         ALL_ROW_HISTORY.*,
         CONVERT(DECIMAL(10,6), DATEDIFF(SECOND, LAG(ALL_ROW_HISTORY.PROCESS_DATE, 1) OVER (
             PARTITION BY FILTERED_PERMITS.B1_ALT_ID 
             ORDER BY ALL_ROW_HISTORY.PROCESS_DATE
         ), ALL_ROW_HISTORY.PROCESS_DATE) / 86400.0) AS Days_With_Responsible_Party_Previous
-    FROM
-        ALL_ROW_HISTORY 
-    JOIN 
-        FILTERED_PERMITS
-            ON ALL_ROW_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND ALL_ROW_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND ALL_ROW_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    FROM ALL_ROW_HISTORY 
+    JOIN FILTERED_PERMITS
+        ON ALL_ROW_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND ALL_ROW_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND ALL_ROW_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
 ),
+
 Next_Calculations AS (
-    SELECT -- move the current and previous process days open to the next row
+    SELECT 
         Initial_Calculations.*,
         CASE -- determine the cycle based on the process description and status
             WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') 
@@ -301,9 +290,9 @@ Next_Calculations AS (
             ORDER BY Initial_Calculations.PROCESS_DATE
             ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
         ) AS Permit_Issued_Date
-    FROM 
-        Initial_Calculations
+    FROM Initial_Calculations
 ),
+
 Cycle_Calculations AS (
     SELECT -- calculate the cycle number by counting the times we see applicant
         Next_Calculations.*,
@@ -324,9 +313,9 @@ Cycle_Calculations AS (
             WHEN MAX(Next_Calculations.Cycle_ID) OVER (PARTITION BY Next_Calculations.B1_ALT_ID) = 1 THEN 'Intake Cycle'
             ELSE 'Unknown'
         END AS Current_Process_Status
-    FROM 
-        Next_Calculations
+    FROM Next_Calculations
 ),
+
 FINAL_BUILDING_PERMIT_METRICS AS (
     SELECT -- calculate the final metrics and make the final assignments
         Cycle_Calculations.B1_ALT_ID AS Permit_ID,
@@ -374,17 +363,15 @@ FINAL_BUILDING_PERMIT_METRICS AS (
             ORDER BY Cycle_Calculations.PROCESS_DATE DESC
         ) AS Process_Rank,
         PERMIT_DETAILS.Process_Code
-    FROM
-        Cycle_Calculations
-    LEFT JOIN
-        PERMIT_DETAILS
-            ON Cycle_Calculations.B1_PER_ID1 = PERMIT_DETAILS.B1_PER_ID1
-            AND Cycle_Calculations.B1_PER_ID2 = PERMIT_DETAILS.B1_PER_ID2
-            AND Cycle_Calculations.B1_PER_ID3 = PERMIT_DETAILS.B1_PER_ID3
+    FROM Cycle_Calculations
+    LEFT JOIN PERMIT_DETAILS
+        ON Cycle_Calculations.B1_PER_ID1 = PERMIT_DETAILS.B1_PER_ID1
+        AND Cycle_Calculations.B1_PER_ID2 = PERMIT_DETAILS.B1_PER_ID2
+        AND Cycle_Calculations.B1_PER_ID3 = PERMIT_DETAILS.B1_PER_ID3
     WHERE -- only include permits filed in the last 7 years and issued in the last 5 years, and only include rows relevant to team completion
         YEAR(Cycle_Calculations.Permit_Open_Date) >= YEAR(GETDATE()) - 7
-            AND (Cycle_Calculations.Permit_Issued_Date IS NULL 
-                OR YEAR(Cycle_Calculations.Permit_Issued_Date) >= YEAR(GETDATE()) - 5)
+        AND (Cycle_Calculations.Permit_Issued_Date IS NULL 
+            OR YEAR(Cycle_Calculations.Permit_Issued_Date) >= YEAR(GETDATE()) - 5)
         AND Cycle_Calculations.Filled_Change_Cycle IN ('Review Cycle', 'Post-Review')
         AND Cycle_Calculations.PROCESS_DESCRIPTION IN ('Electrical', 'Engineering', 'Environmental Health',
             'Fire', 'Forestry', 'Issue Permit', 'Mechanical', 'Parks and Recreation', 'Parks and Trails', 
@@ -393,6 +380,7 @@ FINAL_BUILDING_PERMIT_METRICS AS (
         AND NOT (Cycle_Calculations.PROCESS_DESCRIPTION = 'Engineering'
             AND Cycle_Calculations.PROCESS_STATUS = 'Create Engineering Records')
 ),
+
 FINAL_BUILDING_PERMIT_OPERATIONAL_INSIGHTS AS (
 SELECT -- select the final metrics
     FBMC.Permit_ID,
@@ -422,6 +410,7 @@ SELECT -- select the final metrics
 FROM
     FINAL_BUILDING_PERMIT_METRICS FBMC
 )
+
 SELECT
     FBPOI.Permit_ID,
     FBPOI.Permit_Type,
@@ -444,10 +433,8 @@ SELECT
             OR (FBPOI.Process_Owner = 'Issue Permit' AND FBPOI.Process_Decision = 'Issued') THEN FBPOI.Days_Since_Previous_Step
         ELSE FBPOI.Days_To_Review_Completion
     END AS Days_To_Review_Completion
-FROM
-    FINAL_BUILDING_PERMIT_OPERATIONAL_INSIGHTS FBPOI
-WHERE 
-    FBPOI.Days_To_Review_Completion > 0
+FROM FINAL_BUILDING_PERMIT_OPERATIONAL_INSIGHTS FBPOI
+WHERE FBPOI.Days_To_Review_Completion > 0
 ORDER BY
     FBPOI.Permit_ID DESC,
     FBPOI.Process_Decision_Date

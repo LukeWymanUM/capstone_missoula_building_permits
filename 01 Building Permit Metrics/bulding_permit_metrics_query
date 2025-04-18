@@ -8,15 +8,16 @@ required by the dashboard.
 
 The data included both issued and non-issued permits, meaning this data set 
 includes both issued and non-issued permits. This allows for creation of 
-visualizations relevant to showcasing active permit statuses.
+visualizations relevant to showcasing permits in the queue.
 
-When the data ends up in ArcGIS, the data can be furthter aggregated by using
-data expressions, specifically by dropping detail, such as by consolidating 
-to only see time with city and time with applicant. Any reduction in
-dimensionality should be done on non-permit-specific data, i.e. permit type, as
-permit details like this are included as filters for the dashboard. So, data 
+When the data ends up in ArcGIS, the data can be further aggregated by using
+Arcade data expressions, specifically by dropping detail, such as by 
+consolidating to only see time with city and time with applicant. Any reduction
+in dimensionality should be done on non-permit-specific data, i.e. permit type,
+as permit details like this are included as filters for the dashboard. So, data 
 expressions can be used to abstract out the cycles and responsible parties. 
 */
+
 WITH
 FILTERED_PERMITS AS (
     SELECT -- filter the data to only include permits relevant for dashboard
@@ -29,35 +30,32 @@ FILTERED_PERMITS AS (
             WHEN B1PERMIT.B1_PER_TYPE = 'Commercial Construction' THEN 'Commercial'
             ELSE 'Unknown'
         END AS B1_PER_TYPE
-    FROM 
-        B1PERMIT
-    WHERE 
-        B1PERMIT.B1_PER_GROUP = 'Building' -- building permits
+    FROM B1PERMIT
+    WHERE B1PERMIT.B1_PER_GROUP = 'Building' -- building permits
         AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction') -- residential and commercial construction
         AND B1_APPL_CLASS = 'COMPLETE' -- complete permits (no TEMPs)
         AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn', 'Refunded') -- not closed, withdrawn, or refunded
         AND YEAR(CONVERT(DATE, B1PERMIT.B1_FILE_DD)) >= YEAR(GETDATE()) - 7 -- permits filed in last 7 years
 ),
+
 PERMIT_TYPE AS (
     SELECT -- get the permit type from the checklist
         BCHCKBOX.B1_PER_ID1,
         BCHCKBOX.B1_PER_ID2,
         BCHCKBOX.B1_PER_ID3,
         MIN(BCHCKBOX.B1_CHECKLIST_COMMENT) AS PERMIT_TYPE_x
-    FROM 
-        BCHCKBOX
-    JOIN 
-        FILTERED_PERMITS 
-            ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
-    WHERE 
-        BCHCKBOX.B1_CHECKBOX_DESC IN ('Commercial Subtype', 'Residential Subtype')
+    FROM BCHCKBOX
+    JOIN FILTERED_PERMITS 
+        ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    WHERE BCHCKBOX.B1_CHECKBOX_DESC IN ('Commercial Subtype', 'Residential Subtype')
     GROUP BY 
         BCHCKBOX.B1_PER_ID1, 
         BCHCKBOX.B1_PER_ID2, 
         BCHCKBOX.B1_PER_ID3
 ),
+
 PROJECT_TYPE AS (
     SELECT -- get the project type from the checklist
         BCHCKBOX.B1_PER_ID1,
@@ -67,30 +65,27 @@ PROJECT_TYPE AS (
             WHEN BCHCKBOX.B1_CHECKLIST_COMMENT = 'CHECKED' THEN 'New Construction'
             ELSE 'Addition/Remodel'
         END AS Project_Type
-    FROM 
-        BCHCKBOX
-    JOIN 
-        FILTERED_PERMITS 
-            ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
-    WHERE 
-        BCHCKBOX.B1_CHECKBOX_DESC = 'New Construction' -- if no row for new construction, then null is later filled in with addition/remodel
+    FROM BCHCKBOX
+    JOIN FILTERED_PERMITS 
+        ON BCHCKBOX.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND BCHCKBOX.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND BCHCKBOX.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    WHERE BCHCKBOX.B1_CHECKBOX_DESC = 'New Construction' -- if no row for new construction, then null is later filled in with addition/remodel
 ),
+
 PROCESS_CODE AS (
     SELECT DISTINCT
         GPROCESS_HISTORY.B1_PER_ID1,
         GPROCESS_HISTORY.B1_PER_ID2,
         GPROCESS_HISTORY.B1_PER_ID3,
         GPROCESS_HISTORY.R1_PROCESS_CODE AS Process_Code
-    FROM 
-        GPROCESS_HISTORY
-    JOIN 
-        FILTERED_PERMITS
-            ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    FROM GPROCESS_HISTORY
+    JOIN FILTERED_PERMITS
+        ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
 ),
+
 GPROCESS_HISTORY_ROWS AS (
     SELECT -- select the data from the gprocess history table
         GPROCESS_HISTORY.B1_PER_ID1,
@@ -123,14 +118,13 @@ GPROCESS_HISTORY_ROWS AS (
             ELSE GPROCESS_HISTORY.G6_ISS_FNAME + ' ' + GPROCESS_HISTORY.G6_ISS_LNAME
         END AS RESPONSIBLE_PARTY_NAME,
         'GPROCESS_HISTORY' AS SOURCE
-    FROM 
-        GPROCESS_HISTORY
-    JOIN 
-        FILTERED_PERMITS 
-            ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    FROM GPROCESS_HISTORY
+    JOIN FILTERED_PERMITS 
+        ON GPROCESS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND GPROCESS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND GPROCESS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
 ),
+
 STATUS_HISTORY_ROWS AS (
     SELECT -- select the data from the status history table
         STATUS_HISTORY.B1_PER_ID1,
@@ -142,7 +136,7 @@ STATUS_HISTORY_ROWS AS (
         CASE -- remove a second to the application being opened to fix a data sync timing issue
             WHEN STATUS_HISTORY.TYPE = 'APPLICATION' 
                 AND STATUS_HISTORY.STATUS = 'Open' THEN DATEADD(SECOND, -1, STATUS_HISTORY.REC_DATE)
-                ELSE STATUS_HISTORY.REC_DATE 
+            ELSE STATUS_HISTORY.REC_DATE 
         END AS PROCESS_DATE,
         CASE -- a simple determination of responsible party based on process description and status
             WHEN STATUS_HISTORY.TYPE = 'APPLICATION'
@@ -171,15 +165,14 @@ STATUS_HISTORY_ROWS AS (
             ELSE 'Unknown'
         END AS RESPONSIBLE_PARTY_NAME,
         'STATUS_HISTORY' AS SOURCE
-    FROM 
-        STATUS_HISTORY
-    JOIN 
-        FILTERED_PERMITS
-            ON STATUS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND STATUS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND STATUS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    FROM STATUS_HISTORY
+    JOIN FILTERED_PERMITS
+        ON STATUS_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND STATUS_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND STATUS_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
     WHERE STATUS_HISTORY.STATUS != 'Expired'
 ),
+
 PERMIT_DETAILS AS (
     SELECT -- bring together the permit data with the permit type and project type
         FILTERED_PERMITS.B1_PER_ID1,
@@ -191,7 +184,8 @@ PERMIT_DETAILS AS (
         PROCESS_CODE.Process_Code,
         CASE -- if no row for new construction, then null is filled in with addition/remodel
             WHEN PROJECT_TYPE.Project_Type IS NULL THEN 'Addition/Remodel'
-            ELSE PROJECT_TYPE.Project_Type END AS Project_Type
+            ELSE PROJECT_TYPE.Project_Type 
+        END AS Project_Type
     FROM FILTERED_PERMITS
     LEFT JOIN PERMIT_TYPE
         ON FILTERED_PERMITS.B1_PER_ID1 = PERMIT_TYPE.B1_PER_ID1
@@ -206,17 +200,16 @@ PERMIT_DETAILS AS (
         AND FILTERED_PERMITS.B1_PER_ID2 = PROCESS_CODE.B1_PER_ID2
         AND FILTERED_PERMITS.B1_PER_ID3 = PROCESS_CODE.B1_PER_ID3
 ),
+
 ALL_ROW_HISTORY AS (
     SELECT -- bring together the gprocess history and status history data
         * 
-    FROM 
-        GPROCESS_HISTORY_ROWS
+    FROM GPROCESS_HISTORY_ROWS
     UNION ALL
-    SELECT 
-        *
-    FROM 
-        STATUS_HISTORY_ROWS
+    SELECT *
+    FROM STATUS_HISTORY_ROWS
 ),
+
 Initial_Calculations AS (
     SELECT -- calculate the number of days the permit was open and the number of days the responsible party was responsible
         ALL_ROW_HISTORY.*,
@@ -228,14 +221,13 @@ Initial_Calculations AS (
             PARTITION BY FILTERED_PERMITS.B1_ALT_ID 
             ORDER BY ALL_ROW_HISTORY.PROCESS_DATE
         ), ALL_ROW_HISTORY.PROCESS_DATE) / 86400.0) AS Days_With_Responsible_Party_Previous
-    FROM
-        ALL_ROW_HISTORY 
-    JOIN 
-        FILTERED_PERMITS
-            ON ALL_ROW_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
-            AND ALL_ROW_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
-            AND ALL_ROW_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
+    FROM ALL_ROW_HISTORY 
+    JOIN FILTERED_PERMITS
+        ON ALL_ROW_HISTORY.B1_PER_ID1 = FILTERED_PERMITS.B1_PER_ID1
+        AND ALL_ROW_HISTORY.B1_PER_ID2 = FILTERED_PERMITS.B1_PER_ID2
+        AND ALL_ROW_HISTORY.B1_PER_ID3 = FILTERED_PERMITS.B1_PER_ID3
 ),
+
 Next_Calculations AS (
     SELECT -- move the current and previous process days open to the next row
         Initial_Calculations.*,
@@ -401,9 +393,9 @@ Next_Calculations AS (
             ORDER BY Initial_Calculations.PROCESS_DATE
             ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
         ) AS Permit_Issued_Date
-    FROM 
-        Initial_Calculations
+    FROM Initial_Calculations
 ),
+
 Cycle_Calculations AS (
     SELECT -- calculate the cycle number by counting the times we see applicant
         Next_Calculations.*,
@@ -418,9 +410,9 @@ Cycle_Calculations AS (
             ORDER BY Next_Calculations.PROCESS_DATE
             ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
         ) AS Cycle_Number
-    FROM 
-        Next_Calculations
+    FROM Next_Calculations
 ),
+
 FINAL_BUILDING_PERMIT_METRICS AS (
     SELECT -- calculate the final metrics and make the final assignments
         Cycle_Calculations.B1_ALT_ID AS Permit_ID,
@@ -465,18 +457,17 @@ FINAL_BUILDING_PERMIT_METRICS AS (
         Cycle_Calculations.PROCESS_DAYS_OPEN AS Process_Days_Start,
         Cycle_Calculations.PROCESS_DAYS_OPEN_PREVIOUS AS Process_Days_End,
         Cycle_Calculations.Days_With_Responsible_Party AS Days_In_Process
-    FROM
-        Cycle_Calculations
-    LEFT JOIN
-        PERMIT_DETAILS
-            ON Cycle_Calculations.B1_PER_ID1 = PERMIT_DETAILS.B1_PER_ID1
-            AND Cycle_Calculations.B1_PER_ID2 = PERMIT_DETAILS.B1_PER_ID2
-            AND Cycle_Calculations.B1_PER_ID3 = PERMIT_DETAILS.B1_PER_ID3
+    FROM Cycle_Calculations
+    LEFT JOIN PERMIT_DETAILS
+        ON Cycle_Calculations.B1_PER_ID1 = PERMIT_DETAILS.B1_PER_ID1
+        AND Cycle_Calculations.B1_PER_ID2 = PERMIT_DETAILS.B1_PER_ID2
+        AND Cycle_Calculations.B1_PER_ID3 = PERMIT_DETAILS.B1_PER_ID3
     WHERE -- only include permits filed in the last 7 years and issued in the last 5 years
         YEAR(Cycle_Calculations.Permit_Open_Date) >= YEAR(GETDATE()) - 7
             AND (Cycle_Calculations.Permit_Issued_Date IS NULL 
                 OR YEAR(Cycle_Calculations.Permit_Issued_Date) >= YEAR(GETDATE()) - 5)
 )
+
 SELECT -- select the final metrics and make the final assignments, show handoffs by responsible party, cycle, permit
     FBMC.Permit_ID,
     FBMC.Permit_Type,
@@ -505,8 +496,7 @@ SELECT -- select the final metrics and make the final assignments, show handoffs
     ISNULL(MIN(FBMC.Process_Days_Start), 0) AS Min_Days_Responsible_Party_Open,
     ISNULL(MAX(FBMC.Process_Days_End), 0) AS Max_Days_Responsible_Party_Open,
     ISNULL(SUM(FBMC.Days_In_Process), 0) AS Days_Responsible_Party_Open
-FROM
-    FINAL_BUILDING_PERMIT_METRICS FBMC
+FROM FINAL_BUILDING_PERMIT_METRICS FBMC
 GROUP BY
     FBMC.Permit_ID,
     FBMC.Permit_Type,

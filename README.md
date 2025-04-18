@@ -51,7 +51,7 @@ The solution integrates data from the department's SQL database and Excel workbo
 
 ## Technologies Used
 - **Data Processing**:
-  - Python (pandas, numpy, sqlite3)
+  - Python (pandas, numpy)
   - Excel
   - SQLite/SQL
 - **Visualization**:
@@ -59,12 +59,3 @@ The solution integrates data from the department's SQL database and Excel workbo
   - ArcGIS Dashboards
 - **Version Control**:
   - Git/GitHub
-
-## Contributing
-This project is part of a capstone project. For contributions or questions, please contact the project maintainers.
-
-## License
-[Specify your license here]
-
-## Contact
-[Add contact information for project maintainers]

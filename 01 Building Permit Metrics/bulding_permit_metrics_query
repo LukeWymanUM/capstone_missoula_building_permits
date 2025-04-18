@@ -252,7 +252,13 @@ Next_Calculations AS (
             WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') 
                 AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 'Review Cycle'
             WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' 
-                AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 'Post-Review'
+                AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 'Issued'
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Final Engineering Review'
+                AND Initial_Calculations.PROCESS_STATUS = 'Temporary C of O' THEN 'Temporary C of O'
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Inspection' 
+                AND Initial_Calculations.PROCESS_STATUS = 'Final Inspection Complete' THEN 'Inspection'
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Complete' 
+                AND Initial_Calculations.PROCESS_STATUS = 'C of O Issued' THEN 'C of O'
             ELSE NULL
         END AS Change_Cycle,
         CASE -- determine the change cycle id that can be used for sorting
@@ -261,15 +267,27 @@ Next_Calculations AS (
                 AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
             WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' 
                 AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Final Engineering Review'
+                AND Initial_Calculations.PROCESS_STATUS = 'Temporary C of O' THEN 4
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Inspection' 
+                AND Initial_Calculations.PROCESS_STATUS = 'Final Inspection Complete' THEN 5
+            WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Complete' 
+                AND Initial_Calculations.PROCESS_STATUS = 'C of O Issued' THEN 6
             ELSE NULL
         END AS Cycle_ID,
         CASE -- fill in the change cycle based on the change cycle id
             WHEN MAX(CASE 
                 WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 1
-                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') 
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing')
                     AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
-                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' 
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit'
                     AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Final Engineering Review'
+                    AND Initial_Calculations.PROCESS_STATUS = 'Temporary C of O' THEN 4
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Inspection' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'Final Inspection Complete' THEN 5
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Complete' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'C of O Issued' THEN 6
                 ELSE NULL
             END) OVER (
                 PARTITION BY Initial_Calculations.B1_ALT_ID
@@ -278,10 +296,16 @@ Next_Calculations AS (
             ) = 1 THEN 'Intake Cycle'
             WHEN MAX(CASE 
                 WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 1
-                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing') 
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing')
                     AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
-                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit' 
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit'
                     AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Final Engineering Review'
+                    AND Initial_Calculations.PROCESS_STATUS = 'Temporary C of O' THEN 4
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Inspection' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'Final Inspection Complete' THEN 5
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Complete' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'C of O Issued' THEN 6
                 ELSE NULL
             END) OVER (
                 PARTITION BY Initial_Calculations.B1_ALT_ID
@@ -294,12 +318,72 @@ Next_Calculations AS (
                     AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
                 WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit'
                     AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Final Engineering Review'
+                    AND Initial_Calculations.PROCESS_STATUS = 'Temporary C of O' THEN 4
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Inspection' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'Final Inspection Complete' THEN 5
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Complete' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'C of O Issued' THEN 6
                 ELSE NULL
             END) OVER (
                 PARTITION BY Initial_Calculations.B1_ALT_ID
                 ORDER BY Initial_Calculations.PROCESS_DATE
                 ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
-            ) = 3 THEN 'Post-Review'
+            ) = 3 THEN 'Issued'
+            WHEN MAX(CASE 
+                WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 1
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing')
+                    AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit'
+                    AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Final Engineering Review'
+                    AND Initial_Calculations.PROCESS_STATUS = 'Temporary C of O' THEN 4
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Inspection' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'Final Inspection Complete' THEN 5
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Complete' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'C of O Issued' THEN 6
+                ELSE NULL
+            END) OVER (
+                PARTITION BY Initial_Calculations.B1_ALT_ID
+                ORDER BY Initial_Calculations.PROCESS_DATE
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) = 4 THEN 'Temporary C of O'
+            WHEN MAX(CASE 
+                WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 1
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing')
+                    AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit'
+                    AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Final Engineering Review'
+                    AND Initial_Calculations.PROCESS_STATUS = 'Temporary C of O' THEN 4
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Inspection' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'Final Inspection Complete' THEN 5
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Complete' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'C of O Issued' THEN 6
+                ELSE NULL
+            END) OVER (
+                PARTITION BY Initial_Calculations.B1_ALT_ID
+                ORDER BY Initial_Calculations.PROCESS_DATE
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) = 5 THEN 'Inspection'
+            WHEN MAX(CASE 
+                WHEN Initial_Calculations.Days_With_Responsible_Party_Previous IS NULL THEN 1
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION IN ('Application Intake', 'Addressing')
+                    AND Initial_Calculations.PROCESS_STATUS IN ('Complete', 'App Review Not Required') THEN 2
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Issue Permit'
+                    AND Initial_Calculations.PROCESS_STATUS = 'Issued' THEN 3
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Final Engineering Review'
+                    AND Initial_Calculations.PROCESS_STATUS = 'Temporary C of O' THEN 4
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Inspection' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'Final Inspection Complete' THEN 5
+                WHEN Initial_Calculations.PROCESS_DESCRIPTION = 'Complete' 
+                    AND Initial_Calculations.PROCESS_STATUS = 'C of O Issued' THEN 6
+                ELSE NULL
+            END) OVER (
+                PARTITION BY Initial_Calculations.B1_ALT_ID
+                ORDER BY Initial_Calculations.PROCESS_DATE
+                ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+            ) = 6 THEN 'C of O'
             ELSE NULL
         END AS Filled_Change_Cycle,
         FIRST_VALUE(Initial_Calculations.PROCESS_DATE) OVER ( -- get the permit open date (first record for each permit)
@@ -357,7 +441,10 @@ FINAL_BUILDING_PERMIT_METRICS AS (
         CASE 
             WHEN Cycle_Calculations.Filled_Change_Cycle = 'Intake Cycle' THEN 1
             WHEN Cycle_Calculations.Filled_Change_Cycle = 'Review Cycle' THEN 2
-            WHEN Cycle_Calculations.Filled_Change_Cycle = 'Post-Review' THEN 3
+            WHEN Cycle_Calculations.Filled_Change_Cycle = 'Issued' THEN 3
+            WHEN Cycle_Calculations.Filled_Change_Cycle = 'Temporary C of O' THEN 4
+            WHEN Cycle_Calculations.Filled_Change_Cycle = 'Inspection' THEN 5
+            WHEN Cycle_Calculations.Filled_Change_Cycle = 'C of O' THEN 6
             ELSE NULL
         END AS Cycle_ID,
         CASE -- clean up the cycle number to avoid showing anything over 5 review cycles
@@ -397,7 +484,10 @@ SELECT -- select the final metrics and make the final assignments, show handoffs
     FBMC.Project_Type,
     ISNULL(FBMC.Process_Code, '') AS Process_Code,
     CASE -- use the cycle id to get the current processing status based on our assignment logic
-        WHEN MAX(FBMC.Cycle_ID) OVER (PARTITION BY FBMC.Permit_ID) = 3 THEN 'Post-Review'
+        WHEN MAX(FBMC.Cycle_ID) OVER (PARTITION BY FBMC.Permit_ID) = 6 THEN 'C of O'
+        WHEN MAX(FBMC.Cycle_ID) OVER (PARTITION BY FBMC.Permit_ID) = 5 THEN 'Inspection'
+        WHEN MAX(FBMC.Cycle_ID) OVER (PARTITION BY FBMC.Permit_ID) = 4 THEN 'Temporary C of O'
+        WHEN MAX(FBMC.Cycle_ID) OVER (PARTITION BY FBMC.Permit_ID) = 3 THEN 'Issued'
         WHEN MAX(FBMC.Cycle_ID) OVER (PARTITION BY FBMC.Permit_ID) = 2 THEN 'Review Cycle'
         WHEN MAX(FBMC.Cycle_ID) OVER (PARTITION BY FBMC.Permit_ID) = 1 THEN 'Intake Cycle'
         ELSE 'Unknown'

@@ -15,12 +15,14 @@ This project revolutionizes how Missoula's Community Planning, Development & Inn
 The solution integrates data from the department's SQL database and Excel workbooks, transforming it into comprehensive, easy-to-understand visualizations in ArcGIS dashboards. This not only saves valuable staff time but also provides the first real insights into this information, enhancing transparency and public understanding of the city's development processes.
 
 ## Repository Structure
-- **01 Building Permit Metrics**: Contains notebooks and scripts related to the "Building Permit Metrics" dashboard.
-- **02 Building Permit Operational Insights**: Contains notebooks and scripts related to the "Building Permit Operational Insights" dashboard.
-- **03 Community Development Snapshots**: Contains notebooks and scripts related to the "Community Development Snapshots" dashboard.
-- **Business Requirement Documents**: Contains versions of the documentation outlining the project requirements and objectives provided by stakeholders.
-- **Permit Data Inventory**: Contains versions of a catalog of available permit data sources, fields, and their definitions.
-- **outline.txt**: General project outline and development roadmap.
+- **[01 Building Permit Metrics](01%20Building%20Permit%20Metrics/)**: Contains notebooks and scripts related to the "Building Permit Metrics" dashboard.
+- **[02 Building Permit Operational Insights](02%20Building%20Permit%20Operational%20Insights/)**: Contains notebooks and scripts related to the "Building Permit Operational Insights" dashboard.
+- **[03 Community Development Snapshots](03%20Community%20Development%20Snapshots/)**: Contains notebooks and scripts related to the "Community Development Snapshots" dashboard.
+- **[Deliverables](Deliverables/)**: Contains final project deliverables and documentation.
+- **[Archive](Archive/)**: Contains archived materials and previous versions.
+- **[Permit Data Inventory](Permit%20Data%20Inventory/)**: Contains a catalog of available permit data sources, fields, and their definitions.
+- **[resources](resources/)**: Contains project resources including logos, images, and notes.
+- **Dashboard Inventory.xlsx**: Excel file containing dashboard specifications and inventory. (WIP)
 - **three_ps_wyman.txt**: Provides updates on the project.
 
 ## Data Products
@@ -51,11 +53,12 @@ The solution integrates data from the department's SQL database and Excel workbo
 
 ## Technologies Used
 - **Data Processing**:
+  - Jupyter Notebooks
   - Python (pandas, numpy)
   - Excel
-  - SQLite/SQL
+  - Azure SQL Database
 - **Visualization**:
-  - ArcGIS/Arcade
   - ArcGIS Dashboards
+  - ArcGIS Arcade Expressions
 - **Version Control**:
   - Git/GitHub

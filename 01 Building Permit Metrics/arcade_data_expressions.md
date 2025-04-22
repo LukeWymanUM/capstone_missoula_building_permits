@@ -74,6 +74,87 @@ Arcade data expressions are used in the Building Permit Metrics dashboard to:
 - Updates in real-time
 - Handles edge cases for new permits
 
+### Permit Processing Time with Owner
+**Purpose**: Calculates maximum processing time for each permit within each cycle while preserving the responsible process owner.
+**Usage**: Used in performance analysis and tracking.
+
+```arcade
+// Create a portal connection
+var portal = Portal('https://www.arcgis.com');
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '92baab2df82748d393edf63ff0397caa',
+    0,
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Cycle_Number',
+        'Process_Owner',
+        'Process_Decision',
+        'Process_Decision_Date',
+        'Responsible_Party_Department',
+        'Responsible_Party_Name',
+        'Days_To_Review_Completion'
+    ],
+    false
+);
+
+// Filter for issued permits and specific process owners
+var fs = Filter(fs, "Permit_Issued_Year IS NOT NULL AND Process_Owner IN ('Permit Approval', 'Issue Permit', 'Review Consolidation')");
+
+// Group by permit and cycle to get max days
+var maxDays = GroupBy(fs,
+    ['Permit_ID', 'Cycle_Number'],
+    [{name: 'Max_Days', expression: 'Days_To_Review_Completion', statistic: 'MAX'}]
+);
+
+// Create result array
+var result = [];
+
+// Process each group
+for (var group in maxDays) {
+    var permitId = group.Permit_ID;
+    var cycleNumber = group.Cycle_Number;
+    var maxDay = group.Max_Days;
+    
+    // Find matching record
+    var matchingRecords = Filter(fs, 
+        "Permit_ID = '" + permitId + "' AND Cycle_Number = " + cycleNumber + " AND Days_To_Review_Completion = " + maxDay
+    );
+    
+    if (Count(matchingRecords) > 0) {
+        var matchingRecord = First(matchingRecords);
+        Push(result, {
+            Permit_ID: permitId,
+            Permit_Type: matchingRecord.Permit_Type,
+            Permit_Subtype: matchingRecord.Permit_Subtype,
+            Project_Type: matchingRecord.Project_Type,
+            Process_Code: matchingRecord.Process_Code,
+            Current_Process_Status: matchingRecord.Current_Process_Status,
+            Permit_Open_Year: matchingRecord.Permit_Open_Year,
+            Permit_Open_Month: matchingRecord.Permit_Open_Month,
+            Permit_Issued_Year: matchingRecord.Permit_Issued_Year,
+            Permit_Issued_Month: matchingRecord.Permit_Issued_Month,
+            Cycle_Number: cycleNumber,
+            Process_Owner: matchingRecord.Process_Owner,
+            Days_To_Review_Completion: maxDay
+        });
+    }
+}
+
+return result;
+```
+
 ## Best Practices
 1. Always include error handling
 2. Document all parameters

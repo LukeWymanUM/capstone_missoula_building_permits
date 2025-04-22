@@ -5,6 +5,26 @@ Problems: What are you stuck on or struggling with?
 Plans: What do you intend to accomplish between now and next week’s post?
 Hours: How many hours did you spend working on your Capstone since last week’s
 post?
+------------------------------------------------------------
+
+---04/22/25---
+Progress: I have done a significant, almost overwhelming, amount of work over
+the course of the last week. I finished dashboard 01, finished  dashboard 02, 
+refactored the theme of dashboard 03 to match 01 and 02, almost finished my
+digital product to completion, and worked on my presentation.
+Problem: Finding the time to do the work I need to do and staying focused.
+There have been a lot of ad-hoc asks that were not part of initial scoping and
+I fear that it is due to scope creep, not because I didn't ask about it at the 
+start of the project. Give an inch and take a mile.
+Plans: Need to finish my presentation. This shouldn't be too difficult, given
+the extensive work that has been done. I will need to ensure that I hone in on
+what is important for the presentation. Even if I spend a minute and a half on
+each dashboard, I'd spend half my time, which isn't feasible. I will talk at a 
+higher level and then allow for questions that will hopefully lead to looking
+into the dashboards, if anything. I'd like to finish up my digital product and
+slides right after I present, so I can focus the last week on fixing up
+documentation and my final written product.
+Hours: 43
 
 ------------------------------------------------------------
 
@@ -194,14 +214,6 @@ Hours: 3
 
 ------------------------------------------------------------
 END - SEE MOST RECENT ENTRY AT TOP
-------------------------------------------------------------
-
----04/22/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
 ------------------------------------------------------------
 
 ---04/29/25---

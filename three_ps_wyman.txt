@@ -7,6 +7,20 @@ Hours: How many hours did you spend working on your Capstone since last week’s
 post?
 ------------------------------------------------------------
 
+---04/29/25---
+Progress: Finished my presentation and am finalizing details in my digital
+product. I have a few things to wrap up to ensure my query is good for the API
+integration. I presented the dashboads to the CPDI team and ran well over time
+explaining what they enable, so the excitement is clear.
+Problem: No issues.
+Plans: By next week, everything should be completed. I still have to open up my
+written product and clean up my code/repository. There isn't much to do, but I
+want the content as clean as possible for handoff. I really need to work with
+the team to get the live data enabled.
+Hours: 18
+
+------------------------------------------------------------
+
 ---04/22/25---
 Progress: I have done a significant, almost overwhelming, amount of work over
 the course of the last week. I finished dashboard 01, finished  dashboard 02, 
@@ -214,20 +228,4 @@ Hours: 3
 
 ------------------------------------------------------------
 END - SEE MOST RECENT ENTRY AT TOP
-------------------------------------------------------------
-
----04/29/25---
-Progress:
-Problem:
-Plans:
-Hours:
-
-------------------------------------------------------------
-
----05/06/25----
-Progress:
-Problem:
-Plans:
-Hours:
-
 ------------------------------------------------------------

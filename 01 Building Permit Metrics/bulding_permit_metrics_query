@@ -34,7 +34,7 @@ FILTERED_PERMITS AS (
     WHERE B1PERMIT.B1_PER_GROUP = 'Building' -- building permits
         AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction') -- residential and commercial construction
         AND B1_APPL_CLASS = 'COMPLETE' -- complete permits (no TEMPs)
-        AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn', 'Refunded') -- not closed, withdrawn, or refunded
+        AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn', 'Refunded', 'Violation') -- not closed, withdrawn, or refunded
         AND YEAR(CONVERT(DATE, B1PERMIT.B1_FILE_DD)) >= YEAR(GETDATE()) - 7 -- permits filed in last 7 years
 ),
 

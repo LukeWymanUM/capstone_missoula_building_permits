@@ -33,7 +33,7 @@ WITH FILTERED_PERMITS AS (
     WHERE B1PERMIT.B1_PER_GROUP = 'Building' -- building permits
         AND B1PERMIT.B1_PER_TYPE IN ('Residential Construction', 'Commercial Construction') -- residential and commercial construction
         AND B1_APPL_CLASS = 'COMPLETE' -- complete permits (no TEMPs)
-        AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn', 'Refunded') -- not closed, withdrawn, or refunded
+        AND B1_APPL_STATUS NOT IN ('Closed', 'Withdrawn', 'Refunded', 'Violation') -- not closed, withdrawn, or refunded
         AND YEAR(CONVERT(DATE, B1PERMIT.B1_FILE_DD)) >= YEAR(GETDATE()) - 7 -- permits filed in last 7 years
 ),
 
@@ -373,7 +373,7 @@ FINAL_BUILDING_PERMIT_METRICS AS (
         AND (Cycle_Calculations.Permit_Issued_Date IS NULL 
             OR YEAR(Cycle_Calculations.Permit_Issued_Date) >= YEAR(GETDATE()) - 5)
         AND Cycle_Calculations.Filled_Change_Cycle IN ('Review Cycle', 'Post-Review')
-        AND Cycle_Calculations.PROCESS_DESCRIPTION IN ('Electrical', 'Engineering', 'Environmental Health',
+        AND Cycle_Calculations.PROCESS_DESCRIPTION IN ('Building','Electrical', 'Engineering', 'Environmental Health',
             'Fire', 'Forestry', 'Issue Permit', 'Mechanical', 'Parks and Recreation', 'Parks and Trails', 
             'Permit Approval', 'Planning', 'Plumbing', 'Review Consolidation', 'Sewer', 'Stormwater', 'Water', 'Water Quality')
         AND Cycle_Calculations.PROCESS_STATUS NOT IN ('Resubmittal Received', 'Ready for Consolidation', 'Review Consolidation', 'Resubmittal Required')
@@ -409,8 +409,9 @@ SELECT -- select the final metrics
     ) / 86400.0) AS Days_Since_Previous_Step
 FROM
     FINAL_BUILDING_PERMIT_METRICS FBMC
-)
+),
 
+FINAL_WITH_REPLACED_DAYS AS (
 SELECT
     FBPOI.Permit_ID,
     FBPOI.Permit_Type,
@@ -428,14 +429,58 @@ SELECT
     FBPOI.Process_Decision_Date,
     FBPOI.Responsible_Party_Department,
     FBPOI.Responsible_Party_Name,
-    CASE -- replace the days to review completion with the days since the previous step if the process owner is permit approval or issue permit
+    CASE -- replace the days to review completion with the days since the previous step if the process owner is permit approval, issue permit, or review consolidation
         WHEN (FBPOI.Process_Owner = 'Permit Approval' AND FBPOI.Process_Decision = 'Approved')
-            OR (FBPOI.Process_Owner = 'Issue Permit' AND FBPOI.Process_Decision = 'Issued') THEN FBPOI.Days_Since_Previous_Step
+            OR (FBPOI.Process_Owner = 'Issue Permit' AND FBPOI.Process_Decision = 'Issued')
+            OR (FBPOI.Process_Owner = 'Review Consolidation' AND FBPOI.Process_Decision = 'Complete') THEN FBPOI.Days_Since_Previous_Step
         ELSE FBPOI.Days_To_Review_Completion
     END AS Days_To_Review_Completion
 FROM FINAL_BUILDING_PERMIT_OPERATIONAL_INSIGHTS FBPOI
-WHERE FBPOI.Days_To_Review_Completion > 0
+),
+
+LONGEST_PROCESS_IN_CYCLE AS (
+    SELECT 
+        FWRD.Permit_ID,
+        FWRD.Cycle_Number,
+        MAX(FWRD.Days_To_Review_Completion) AS Max_Days_In_Cycle
+    FROM FINAL_WITH_REPLACED_DAYS FWRD
+    WHERE FWRD.Process_Owner NOT IN ('Issue Permit', 'Permit Approval', 'Review Consolidation') -- exclude permit issuance
+        AND FWRD.Days_To_Review_Completion IS NOT NULL -- ensure we only look at processes with actual days
+    GROUP BY 
+        FWRD.Permit_ID,
+        FWRD.Cycle_Number
+)
+
+SELECT
+    FWRD.Permit_ID,
+    FWRD.Permit_Type,
+    FWRD.Permit_Subtype,
+    FWRD.Project_Type,
+    FWRD.Current_Process_Status,
+    FWRD.Process_Code,
+    FWRD.Permit_Open_Year,
+    FWRD.Permit_Open_Month,    
+    FWRD.Permit_Issued_Year,
+    FWRD.Permit_Issued_Month,
+    FWRD.Cycle_Number,
+    FWRD.Process_Owner,
+    FWRD.Process_Decision,
+    FWRD.Process_Decision_Date,
+    FWRD.Responsible_Party_Department,
+    FWRD.Responsible_Party_Name,
+    FWRD.Days_To_Review_Completion,
+    CASE 
+        WHEN FWRD.Days_To_Review_Completion = LPC.Max_Days_In_Cycle 
+            AND FWRD.Process_Owner NOT IN ('Issue Permit', 'Permit Approval', 'Review Consolidation')
+            AND FWRD.Days_To_Review_Completion IS NOT NULL THEN 1
+        ELSE 0
+    END AS Is_Longest_Process_In_Cycle
+FROM FINAL_WITH_REPLACED_DAYS FWRD
+LEFT JOIN LONGEST_PROCESS_IN_CYCLE LPC
+    ON FWRD.Permit_ID = LPC.Permit_ID
+    AND FWRD.Cycle_Number = LPC.Cycle_Number
+WHERE FWRD.Days_To_Review_Completion > 0
 ORDER BY
-    FBPOI.Permit_ID DESC,
-    FBPOI.Process_Decision_Date
+    FWRD.Permit_ID DESC,
+    FWRD.Process_Decision_Date
 OPTION (HASH JOIN)

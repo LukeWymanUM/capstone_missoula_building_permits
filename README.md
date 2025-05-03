@@ -20,7 +20,6 @@ The solution integrates data from the department's SQL database and Excel workbo
 - **[03 Community Development Snapshots](03%20Community%20Development%20Snapshots/)**: Contains notebooks and scripts related to the "Community Development Snapshots" dashboard.
 - **[Deliverables](Deliverables/)**: Contains final project deliverables and documentation.
 - **[Archive](Archive/)**: Contains archived materials and previous versions.
-- **[Permit Data Inventory](Permit%20Data%20Inventory/)**: Contains a catalog of available permit data sources, fields, and their definitions.
 - **[resources](resources/)**: Contains project resources including logos, images, and notes.
 - **three_ps_wyman.txt**: Provides updates on the project.
 

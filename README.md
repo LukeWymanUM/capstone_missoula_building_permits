@@ -31,7 +31,7 @@ The solution integrates data from the department's SQL database and Excel workbo
    - Completely developed and automated data pipeline, going from raw back-end SQL database tables to data sets rich for visualizations
    - Fully automated visualizations of permit processing times, volumes, and types
    - Public-facing metrics that improve overall transparency and understanding of the permitting process
-   - [Link to dashboard](01%20Building%20Permit%20Metrics/building_permits_dashboard.md)
+   - [More Details](01%20Building%20Permit%20Metrics/building_permits_dashboard.md)
 
    ![Building Permit Metrics Dashboard](resources/01_dashboard.png)
 
@@ -39,7 +39,7 @@ The solution integrates data from the department's SQL database and Excel workbo
    - Completely developed and automated data pipeline, going from raw back-end database tables to data sets rich for visualizations
    - Fully automated visualizations of permit processing times, volumes, and types specific to internal, CPDI teams
    - Internal-facing metrics that allow for performance benchmarking against to-be established KPIs
-   - [Link to dashboard](02%20Building%20Permit%20Operational%20Insights/building_permit_operational_insights_dashboard.md)
+   - [More Details](02%20Building%20Permit%20Operational%20Insights/building_permit_operational_insights_dashboard.md)
 
    ![Building Permit Operational Insights Dashboard](resources/02_dashboard.png)
 
@@ -47,7 +47,7 @@ The solution integrates data from the department's SQL database and Excel workbo
    - Replication of community development monthly, quarterly, and yearly snapshots of permit financials
    - Initially developed and partially automated data pipeline, going from audited fiscal year Excel reports to data sets rich for visualizations
    - Consolidated data from multiple years located in a dashboard that empowers community members to find new, longer-term insights about city development
-   - [Link to dashboard](03%20Community%20Development%20Snapshots/community_development_snapshots_dashboard.md)
+   - [More Details](03%20Community%20Development%20Snapshots/community_development_snapshots_dashboard.md)
 
    ![Community Development Snapshots Dashboard](resources/03_dashboard.png)
 

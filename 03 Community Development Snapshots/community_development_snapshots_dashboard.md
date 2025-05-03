@@ -1,5 +1,7 @@
 # Community Development Snapshots Dashboard
 
+![Community Development Snapshots Dashboard](resources/03_dashboard.png)
+
 The CPDI Community Development Snapshots dashboard is a valuable tool for understanding the City of Missoula's development patterns, providing insights into the city's growth and development trends by compiling data on residential and commercial new construction and remodels. 
 
 It enables users to discover new insights about city development patterns, visualize and analyze development trends, seasonal fluctuations, and growth patterns that were previously difficult to identify. With this dashboard, users can track the number of permits issued and the additional units added to the community, gaining a better understanding of the city's housing growth.

@@ -1,6 +1,6 @@
 # Building Permit Operational Insights Dashboard
 
-![Building Permit Operational Insights Dashboard](resources/02_dashboard.png)
+![Building Permit Operational Insights Dashboard](../resources/02_dashboard.png)
 
 This dashboard contains many of the same insights as the building permit metrics dashboard. However, the objective of this dashboard is to provide operational insights to the city during the building permit review process, enabling them to identify areas for improvement and optimize workflows. The dashboard offers a more comprehensive view of the permit application process, including information about which permit processes could be leading to more or longer reviews.
 

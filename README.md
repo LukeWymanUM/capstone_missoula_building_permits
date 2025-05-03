@@ -22,7 +22,6 @@ The solution integrates data from the department's SQL database and Excel workbo
 - **[Archive](Archive/)**: Contains archived materials and previous versions.
 - **[Permit Data Inventory](Permit%20Data%20Inventory/)**: Contains a catalog of available permit data sources, fields, and their definitions.
 - **[resources](resources/)**: Contains project resources including logos, images, and notes.
-- **Dashboard Inventory.xlsx**: Excel file containing dashboard specifications and inventory. (WIP)
 - **three_ps_wyman.txt**: Provides updates on the project.
 
 ## Data Products

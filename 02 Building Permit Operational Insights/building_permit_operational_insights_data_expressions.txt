@@ -1,0 +1,310 @@
+ArcGIS Dashboard Data Expressions - Building Permit Operational Insights
+------------------------------------------------------------------------------
+
+The following data expressions are used to power visualizations and indicators 
+in the Building Permit Operational Insights dashboard. These expressions
+consolidate and process raw data to generate meaningful metrics and
+visualizations that provide operational insights to the processing of
+Missoula's building permits.
+
+The `Building_Permit_Metrics_v2` data has id = '1eba5d6ff9214f2ab6464c2b8c8b92f1'
+The `Building_Permit_Operational_Insights_v2` data has id = 69515af69c2a4e96a047555bf8bb0fc0'
+
+When the city has set up the data integrations from Accela to ArcGIS, they will
+swap out the ids with the live data set.
+
+------------------------------------------------------------------------------
+Data Expression: Building Permit Metrics
+Purpose: This script pulls all the permit data from the building permit metrics
+data. It retrieves key information like permit details, responsible parties,
+and processing timelines. The team can later replace the portal item ID with a 
+live one to get updated data.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal('https://www.arcgis.com');
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '1eba5d6ff9214f2ab6464c2b8c8b92f1',
+    0, // Layer index
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issue_Year',
+        'Permit_Issue_Month',
+        'Cycle',
+        'Cycle_ID',
+        'Cycle_Number',
+        'Responsible_Party',
+        'Responsible_Party_ID',
+        'Min_Days_Responsible_Party_Open',
+        'Max_Days_Responsible_Party_Open',
+        'Days_Responsible_Party_Open',
+        'ObjectId'
+    ],
+    false // Do not include geometry
+);
+
+return fs;
+
+------------------------------------------------------------------------------
+Data Expression: Building Permit Metrics Year and Month
+Purpose: This script retrieves a feature set of permit data, focusing on the 
+permit ID, issued year, and month. It filters out records with an invalid year 
+(greater than 0) and then groups the data by year and month, counting the 
+distinct permit IDs in each group. The result gives a breakdown of the number 
+of unique permits issued per year and month.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal("https://www.arcgis.com");
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+  portal,
+  "1eba5d6ff9214f2ab6464c2b8c8b92f1",
+  0,
+  [
+    "Permit_ID",
+    "Permit_Issued_Year",
+    "Permit_Issued_Month"
+  ],
+  false
+);
+
+// Filter for records with valid year (note the corrected field name spelling)
+var fs = Filter(fs, "Permit_Issued_Year > 0");
+
+// Group by year and month with count of distinct permit IDs
+var result = GroupBy(fs,
+  ["Permit_Issued_Year", "Permit_Issued_Month"],
+  [{name: 'Issued', expression: 'Permit_ID', statistic: 'COUNT DISTINCT'}]
+);
+
+return result;
+
+------------------------------------------------------------------------------
+Data Expression: No Post-Review
+Purpose: This script pulls permit data and filters it down to records with a 
+valid issue year and only those within the "Intake" or "Review" cycle stages. 
+It then groups the data by permit and other key attributes—excluding 
+responsible party details—and sums the number of days each permit was open 
+under a responsible party. The result summarizes how long permits spent in 
+early processing stages, grouped by permit and its main characteristics.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal("https://www.arcgis.com");
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '1eba5d6ff9214f2ab6464c2b8c8b92f1',
+    0,
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Min_Days_Responsible_Party_Open',
+        'Max_Days_Responsible_Party_Open',
+        'Days_Responsible_Party_Open',
+        'ObjectId'
+    ],
+    false
+);
+
+// Filter for issued permits and narrow down to intake and review cycles
+var fs = Filter(fs, "Permit_Issued_Year > 0 AND Cycle IN ('Intake Cycle', 'Review Cycle')");
+
+// Group by everything except the responsible party
+var result = GroupBy(fs,
+      [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+    ],
+  [{name: 'Days_Responsible_Party_Open', expression: 'Days_Responsible_Party_Open', statistic: 'SUM'}]
+);
+
+return result;
+
+------------------------------------------------------------------------------
+Data Expression: Open Permits
+Purpose: This script retrieves permit data and filters it to only include open 
+permits—those with an issued year of 0. It then groups the data by permit and 
+its key details, returning one record per permit. For each group, it calculates
+the maximum number of days the responsible party had the permit open. This 
+helps summarize how long currently open permits have been in progress under a 
+responsible party.
+------------------------------------------------------------------------------
+// Connect to ArcGIS Online
+var portal = Portal("https://www.arcgis.com");
+
+// Get the feature set with the necessary fields
+var fs = FeatureSetByPortalItem(
+  portal,
+  "1eba5d6ff9214f2ab6464c2b8c8b92f1",
+  0,
+  [
+    "Permit_ID",
+    "Permit_Type",
+    "Permit_Subtype",
+    "Project_Type",
+    'Process_Code',
+    "Current_Process_Status",
+    "Current_Responsible_Party",
+    "Permit_Open_Year",
+    "Permit_Open_Month",
+    "Permit_Issued_Year",
+    "Permit_Issued_Month",
+    "Max_Days_Responsible_Party_Open"
+  ],
+  false
+);
+
+// Filter out records with invalid Permit_Issued_Year
+fs = Filter(fs, "Permit_Issued_Year = 0");
+
+// Show one record per permit
+var result = GroupBy(fs,
+      [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+    ],
+  [{name: 'Max_Days_Responsible_Party_Open', expression: 'Max_Days_Responsible_Party_Open', statistic: 'MAX'}]
+);
+
+return result;
+
+------------------------------------------------------------------------------
+Data Expression: Building Permit Operational Insights
+Purpose: This script pulls all the permit data from the operational insights
+data. It retrieves key information like permit details, responsible parties,
+and processing timelines. The team can later replace the portal item ID with a 
+live one to get updated data.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal('https://www.arcgis.com');
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '69515af69c2a4e96a047555bf8bb0fc0',
+    0,
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Cycle_Number',
+        'Process_Owner',
+        'Process_Decision',
+        'Process_Decision_Date',
+        'Responsible_Party_Department',
+        'Responsible_Party_Name',
+        'Days_To_Review_Completion',
+        'Is_Longest_Process_In_Cycle'
+    ],
+    false
+);
+
+return fs
+
+------------------------------------------------------------------------------
+Data Expression: Building Permit Operational Insights Total Time
+Purpose: This script pulls detailed permit review data, including review 
+durations and process ownership. It then groups the records by permit and key 
+descriptive fields, including the process owner, and sums the total review time
+for each group. The result shows how many days each process owner spent
+reviewing specific permits, helping highlight where time is concentrated in the
+review process.
+------------------------------------------------------------------------------=
+// Create a portal connection
+var portal = Portal('https://www.arcgis.com');
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '69515af69c2a4e96a047555bf8bb0fc0',
+    0,
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Cycle_Number',
+        'Process_Owner',
+        'Process_Decision',
+        'Process_Decision_Date',
+        'Responsible_Party_Department',
+        'Responsible_Party_Name',
+        'Days_To_Review_Completion',
+        'Is_Longest_Process_In_Cycle'
+    ],
+    false
+);
+// Group by relevant fields and sum the review time
+var grouped = GroupBy(
+    fs,
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Process_Owner'
+    ],
+    [
+        { name: 'Total_Review_Days', expression: 'Days_To_Review_Completion', statistic: 'SUM' }
+    ]
+);
+
+return grouped;

@@ -1,0 +1,26 @@
+The purpose of this file is to do an audit of how the dashboard differs from
+the workbook. First, I will explain issues in the workbook I see and then will 
+jump into the month-by-month audit comparing results.
+----
+
+There is an issue with the "Oct Report" sheet in all of the workbooks. If you 
+look at cells J37, J39, and J41, you will see incorrect cell references. This
+leads to underreporting of revenue, as the YTD calculation is missing October
+Building, Plumbing, and Demoliion Revenue. So, the following info shows how
+much revenue is missing from the YTD roll-up due to this issue:
+
+Oct 2021 Building: $159,537.00
+Oct 2021 Plumbing: $17,128.00
+Oct 2021 Demolition: $95.00
+
+Oct 2022 Building: $118,716.55
+Oct 2022 Plumbing: $12,685.00
+Oct 2022 Demolition: $114.00
+
+Oct 2023 Building: $64,271.39
+Oct 2023 Plumbing: $20,378.00
+Oct 2023 Demolition: $57.00
+
+Oct 2024 Building: $140,091.51
+Oct 2024 Plumbing: $10,760.00
+Oct 2024 Demolition: $21.00

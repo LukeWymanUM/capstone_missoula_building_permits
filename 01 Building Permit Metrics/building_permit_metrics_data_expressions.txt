@@ -1,0 +1,556 @@
+ArcGIS Dashboard Data Expressions - Building Permit Metrics
+------------------------------------------------------------------------------
+
+The following data expressions are used to power visualizations and indicators 
+in the Building Permit Metrics dashboard. These expressions consolidate and 
+process raw data to generate meaningful metrics and visualizations that provide
+metrics on Misssoula building permits.
+
+The `Building_Permit_Metrics_v2` data has id = '1eba5d6ff9214f2ab6464c2b8c8b92f1'
+
+When the city has set up the data integrations from Accela to ArcGIS, they will
+swap out the ids with the live data set.
+
+------------------------------------------------------------------------------
+Data Expression: Building Permit Metrics
+Purpose: This script pulls all the permit data from the building permit metrics
+data. It retrieves key information like permit details, responsible parties,
+and processing timelines. The team can later replace the portal item ID with a 
+live one to get updated data.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal('https://www.arcgis.com');
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '1eba5d6ff9214f2ab6464c2b8c8b92f1',
+    0, // Layer index
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issue_Year',
+        'Permit_Issue_Month',
+        'Cycle',
+        'Cycle_ID',
+        'Cycle_Number',
+        'Responsible_Party',
+        'Responsible_Party_ID',
+        'Min_Days_Responsible_Party_Open',
+        'Max_Days_Responsible_Party_Open',
+        'Days_Responsible_Party_Open',
+        'ObjectId'
+    ],
+    false // Do not include geometry
+);
+
+return fs;
+
+------------------------------------------------------------------------------
+Data Expression: Building Permit Metrics Year and Month
+Purpose: This script retrieves a feature set of permit data, focusing on the 
+permit ID, issued year, and month. It filters out records with an invalid year 
+(greater than 0) and then groups the data by year and month, counting the 
+distinct permit IDs in each group. The result gives a breakdown of the number 
+of unique permits issued per year and month.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal("https://www.arcgis.com");
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+  portal,
+  "1eba5d6ff9214f2ab6464c2b8c8b92f1",
+  0,
+  [
+    "Permit_ID",
+    "Permit_Issued_Year",
+    "Permit_Issued_Month"
+  ],
+  false
+);
+
+// Filter for records with valid year (note the corrected field name spelling)
+var fs = Filter(fs, "Permit_Issued_Year > 0");
+
+// Group by year and month with count of distinct permit IDs
+var result = GroupBy(fs,
+  ["Permit_Issued_Year", "Permit_Issued_Month"],
+  [{name: 'Issued', expression: 'Permit_ID', statistic: 'COUNT DISTINCT'}]
+);
+
+return result;
+
+------------------------------------------------------------------------------
+Data Expression: Group for Max Cycle
+Purpose: This script cleans the Cycle_Number field by converting any "5+" 
+entries to a numeric 5, ensuring the field is usable for calculations. It then 
+creates a new feature set with this cleaned data and groups it by permit and 
+cycle-related fields. For each group, it calculates the maximum cycle number 
+and the total number of days a responsible party was assigned. This allows for 
+cycle-level analysis of how far permits have progressed and how much time was 
+spent per cycle.
+------------------------------------------------------------------------------
+// Connect to ArcGIS Online
+var portal = Portal("https://www.arcgis.com");
+
+// Get the feature set with the necessary fields
+var fs = FeatureSetByPortalItem(
+  portal,
+  "1eba5d6ff9214f2ab6464c2b8c8b92f1",
+  0,
+  [
+    "Permit_ID",
+    "Permit_Type",
+    "Permit_Subtype",
+    "Project_Type",
+    "Current_Process_Status",
+    "Permit_Open_Year",
+    "Permit_Open_Month",
+    "Permit_Issued_Year",
+    "Permit_Issued_Month",
+    "Cycle",
+    "Cycle_Number",
+    "Days_Responsible_Party_Open"
+  ],
+  false
+);
+
+// Clean the Cycle_Number field by replacing "5+" with "5" (using IIf) 
+// and converting the value to a numeric type.
+var cleaned = [];
+for (var f in fs) {
+  var rawCycle = f["Cycle_Number"];
+  var cleanCycle = IIf(rawCycle == "5+", "5", rawCycle);
+  var numericCycle = Number(cleanCycle);
+  
+  Push(cleaned, {
+    attributes: {
+      Permit_ID: f["Permit_ID"],
+      Permit_Type: f["Permit_Type"],
+      Permit_Subtype: f["Permit_Subtype"],
+      Project_Type: f["Project_Type"],
+      Current_Process_Status: f["Current_Process_Status"],
+      Permit_Open_Year: f["Permit_Open_Year"],
+      Permit_Open_Month: f["Permit_Open_Month"],
+      Permit_Issued_Year: f["Permit_Issued_Year"],
+      Permit_Issued_Month: f["Permit_Issued_Month"],
+      Cycle: f["Cycle"],
+      Cycle_Number: numericCycle,
+      Days_Responsible_Party_Open: f["Days_Responsible_Party_Open"]
+    }
+  });
+}
+
+// Convert the cleaned array back into a FeatureSet so that GroupBy can work properly
+var fs_cleaned = FeatureSet(Text({
+  fields: [
+    { name: "Permit_ID", type: "esriFieldTypeString" },
+    { name: "Permit_Type", type: "esriFieldTypeString" },
+    { name: "Permit_Subtype", type: "esriFieldTypeString" },
+    { name: "Project_Type", type: "esriFieldTypeString" },
+    { name: "Current_Process_Status", type: "esriFieldTypeString" },
+    { name: "Permit_Open_Year", type: "esriFieldTypeInteger" },
+    { name: "Permit_Open_Month", type: "esriFieldTypeInteger" },
+    { name: "Permit_Issued_Year", type: "esriFieldTypeInteger" },
+    { name: "Permit_Issued_Month", type: "esriFieldTypeInteger" },
+    { name: "Cycle", type: "esriFieldTypeString" },
+    { name: "Cycle_Number", type: "esriFieldTypeInteger" },
+    { name: "Days_Responsible_Party_Open", type: "esriFieldTypeDouble" }
+  ],
+  geometryType: "",
+  features: cleaned
+}));
+
+// Group by the specified fields and calculate the maximum cycle number and sum of days open
+var grouped = GroupBy(
+  fs_cleaned,
+  [
+    "Permit_ID",
+    "Permit_Type",
+    "Permit_Subtype",
+    "Project_Type",
+    "Current_Process_Status",
+    "Permit_Open_Year",
+    "Permit_Open_Month",
+    "Permit_Issued_Year",
+    "Permit_Issued_Month",
+    "Cycle"
+  ],
+  [
+    { name: "MaxCycle", expression: "Cycle_Number", statistic: "MAX" },
+    { name: "TotalDays", expression: "Days_Responsible_Party_Open", statistic: "SUM" }
+  ]
+);
+
+// Return the grouped FeatureSet
+return grouped;
+
+------------------------------------------------------------------------------
+Data Expression: No Post-Review
+Purpose: This script pulls permit data and filters it down to records with a 
+valid issue year and only those within the "Intake" or "Review" cycle stages. 
+It then groups the data by permit and other key attributes—excluding 
+responsible party details—and sums the number of days each permit was open 
+under a responsible party. The result summarizes how long permits spent in 
+early processing stages, grouped by permit and its main characteristics.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal("https://www.arcgis.com");
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '1eba5d6ff9214f2ab6464c2b8c8b92f1',
+    0,
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Min_Days_Responsible_Party_Open',
+        'Max_Days_Responsible_Party_Open',
+        'Days_Responsible_Party_Open',
+        'ObjectId'
+    ],
+    false
+);
+
+// Filter for issued permits and narrow down to intake and review cycles
+var fs = Filter(fs, "Permit_Issued_Year > 0 AND Cycle IN ('Intake Cycle', 'Review Cycle')");
+
+// Group by everything except the responsible party
+var result = GroupBy(fs,
+      [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+    ],
+  [{name: 'Days_Responsible_Party_Open', expression: 'Days_Responsible_Party_Open', statistic: 'SUM'}]
+);
+
+return result;
+
+------------------------------------------------------------------------------
+Data Expression: No Post-Review, Grouping by Cycle and Cycle Number
+Purpose: This script pulls permit records from a hosted layer and filters them 
+to only include those in the Intake or Review Cycle. It then groups the data by
+permit, process details, and responsible party, and calculates the total number
+of days each party was responsible during each cycle. The result helps show how
+long different parties are involved in specific parts of the permit process.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal("https://www.arcgis.com");
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '1eba5d6ff9214f2ab6464c2b8c8b92f1',
+    0,
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Cycle',
+        'Cycle_Number',
+        'Min_Days_Responsible_Party_Open',
+        'Max_Days_Responsible_Party_Open',
+        'Days_Responsible_Party_Open',
+        'ObjectId'
+    ],
+    false
+);
+
+// Filter for issued permits and narrow down to intake and review cycles
+var fs = Filter(fs, "Cycle IN ('Intake Cycle', 'Review Cycle')");
+
+// Group by everything except the responsible party
+var result = GroupBy(fs,
+      [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Cycle',
+        'Cycle_Number'
+    ],
+  [{name: 'Days_Responsible_Party_Open', expression: 'Days_Responsible_Party_Open', statistic: 'SUM'}]
+);
+
+return result;
+
+------------------------------------------------------------------------------
+Data Expression: Weeks to Complete a Post-Issuance Cycle
+Purpose: This script connects to a hosted permit dataset, filters out permits 
+that haven't been issued, and groups the remaining records by permit and 
+process details. It then calculates the longest time (in weeks) a responsible 
+party had a task open in each cycle. This helps identify which parts of the 
+process took the most time to complete.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal("https://www.arcgis.com");
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '1eba5d6ff9214f2ab6464c2b8c8b92f1',
+    0,
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Cycle',
+        'Cycle_ID',
+        'Min_Days_Responsible_Party_Open',
+        'Max_Days_Responsible_Party_Open',
+        'Days_Responsible_Party_Open',
+        'ObjectId'
+    ],
+    false
+);
+
+// Filter feature set where Permit_Issued_Year > 0
+var filteredFs = Filter(fs, "Permit_Issued_Year > 0");
+
+// Group by everything except the responsible party
+var result = GroupBy(filteredFs,
+      [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Cycle',
+        'Cycle_ID'
+    ],
+  [{name: 'Weeks_to_Complete', expression: 'Min_Days_Responsible_Party_Open/7', statistic: 'MAX'}]
+);
+
+return result;
+
+------------------------------------------------------------------------------
+Data Expression: Weeks to Complete a Pre-Issuance Cycle
+Purpose: This script loads permit data, groups it by permit and cycle details
+(excluding the responsible party), and calculates the maximum number of weeks 
+a task stayed open during each cycle using the longest duration recorded. It's
+useful for highlighting slowest stages in the permit process.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal("https://www.arcgis.com");
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '1eba5d6ff9214f2ab6464c2b8c8b92f1',
+    0,
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Cycle',
+        'Cycle_ID',
+        'Min_Days_Responsible_Party_Open',
+        'Max_Days_Responsible_Party_Open',
+        'Days_Responsible_Party_Open',
+        'ObjectId'
+    ],
+    false
+);
+
+// Group by everything except the responsible party
+var result = GroupBy(fs,
+      [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Cycle',
+        'Cycle_ID'
+    ],
+  [{name: 'Weeks_to_Complete', expression: 'Max_Days_Responsible_Party_Open/7', statistic: 'MAX'}]
+);
+
+return result;
+
+------------------------------------------------------------------------------
+Data Expression: Open Permits
+Purpose: This script retrieves permit data and filters it to only include open 
+permits—those with an issued year of 0. It then groups the data by permit and 
+its key details, returning one record per permit. For each group, it calculates
+the maximum number of days the responsible party had the permit open. This 
+helps summarize how long currently open permits have been in progress under a 
+responsible party.
+------------------------------------------------------------------------------
+// Connect to ArcGIS Online
+var portal = Portal("https://www.arcgis.com");
+
+// Get the feature set with the necessary fields
+var fs = FeatureSetByPortalItem(
+  portal,
+  "1eba5d6ff9214f2ab6464c2b8c8b92f1",
+  0,
+  [
+    "Permit_ID",
+    "Permit_Type",
+    "Permit_Subtype",
+    "Project_Type",
+    'Process_Code',
+    "Current_Process_Status",
+    "Current_Responsible_Party",
+    "Permit_Open_Year",
+    "Permit_Open_Month",
+    "Permit_Issued_Year",
+    "Permit_Issued_Month",
+    "Max_Days_Responsible_Party_Open"
+  ],
+  false
+);
+
+// Filter out records with invalid Permit_Issued_Year
+fs = Filter(fs, "Permit_Issued_Year = 0");
+
+// Show one record per permit
+var result = GroupBy(fs,
+      [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+    ],
+  [{name: 'Max_Days_Responsible_Party_Open', expression: 'Max_Days_Responsible_Party_Open', statistic: 'MAX'}]
+);
+
+return result;
+
+------------------------------------------------------------------------------
+Data Expression: Group for City vs Applicant Time
+Purpose: This script connects to ArcGIS Online, retrieves permit data, and 
+filters it to focus on permits in the 'Intake Cycle' and 'Review Cycle'. It 
+then groups the data by various permit attributes and calculates the total days
+the responsible party was involved in the process. The result provides a 
+summary of the total days each responsible party worked on permits, organized 
+by different permit types and processes.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal("https://www.arcgis.com");
+
+// Get feature set from portal item
+var fs = FeatureSetByPortalItem(
+    portal,
+    '1eba5d6ff9214f2ab6464c2b8c8b92f1',
+    0,
+    [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Days_Responsible_Party_Open',
+        'Responsible_Party',
+        'Cycle',
+        'ObjectId'
+    ],
+    false
+);
+
+// Filter for issued permits and narrow down to intake and review cycles
+var fs = Filter(fs, "Cycle IN ('Intake Cycle', 'Review Cycle')");
+
+// Group by everything except the responsible party
+var result = GroupBy(fs,
+      [
+        'Permit_ID',
+        'Permit_Type',
+        'Permit_Subtype',
+        'Project_Type',
+        'Process_Code',
+        'Current_Process_Status',
+        'Current_Responsible_Party',
+        'Permit_Open_Year',
+        'Permit_Open_Month',
+        'Permit_Issued_Year',
+        'Permit_Issued_Month',
+        'Responsible_Party'
+    ],
+  [{name: 'Days_Responsible_Party_Open', expression: 'Days_Responsible_Party_Open', statistic: 'SUM'}]
+);
+
+return result;

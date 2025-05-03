@@ -1,18 +1,185 @@
-In order to consolidate data for visualizations and indicators in my arcgis
-dashboards, you have to use data expressions. The following are data 
-expressions used in my table. I will go through and clean these up.
+ArcGIS Dashboard Data Expressions - Community Development Snapshots
+------------------------------------------------------------------------------
 
+The following data expressions are used to power visualizations and indicators 
+in the Community Development Snapshots dashboard. These expressions consolidate
+and process raw data to generate meaningful metrics and visualizations that
+track community development activities.
 
-
-
+The `BuildingPermitDataAll` data has id = '0caf4a67f236449bb08fefac2986d362'
+The `PermitDataAll` data has id = 'c11047a6104147a1a95b3bd86c1d8057'
 
 ------------------------------------------------------------------------------
-YTD Consolidations Building
+Data Expression: YTD Consolidations All
+Purpose: This code connects to an ArcGIS portal, retrieves permit data, and
+groups it by year and month to calculate the total quantity and revenue per 
+group. It then adjusts month numbers for fiscal years to allow proper sorting, 
+orders the data, and calculates cumulative totals of quantity and revenue over 
+time for each fiscal or calendar year. The result is a FeatureSet that shows 
+how permit activity accumulates month by month, which is ideal for visualizing 
+year-to-date trends.
+------------------------------------------------------------------------------
+// Connect to ArcGIS Online portal
+var portal = Portal('https://www.arcgis.com');
+
+// Load the feature layer with selected fields
+var fs = FeatureSetByPortalItem(
+    portal,
+    'c11047a6104147a1a95b3bd86c1d8057',
+    0,
+    [
+        'Quantity',
+        'Revenue',
+        'Permit_Month',
+        'Month_Number',
+        'Permit_Year',
+        'Year_Type'
+    ],
+    false
+);
+
+// Group by year and month, and sum Quantity and Revenue
+fs = GroupBy(
+    fs, 
+    ['Year_Type', 'Permit_Year', 'Month_Number', 'Permit_Month'],
+    [
+        { name: 'Quantity', expression: 'Quantity', statistic: 'SUM' },
+        { name: 'Revenue', expression: 'Revenue', statistic: 'SUM' }
+    ]
+);
+
+// Create an array to store transformed features with adjusted month number
+var transformedData = [];
+
+for (var f in fs) {
+    var sortMonth;
+
+    if (f["Year_Type"] == "Fiscal") {
+        sortMonth = (f["Month_Number"] + 6) % 12;
+        if (sortMonth == 0) sortMonth = 12; // Correct wraparound for December
+    } else {
+        sortMonth = f["Month_Number"];
+    }
+
+    // Create new feature with an additional sorting field
+    var newFeature = {
+        attributes: {
+            Quantity: f["Quantity"],
+            Revenue: f["Revenue"],
+            Permit_Month: f["Permit_Month"],
+            Month_Number: f["Month_Number"], // Retain original month number
+            Sort_Month_Number: sortMonth,    // Adjusted for fiscal sorting
+            Permit_Year: f["Permit_Year"],
+            Year_Type: f["Year_Type"]
+        }
+    };
+
+    Push(transformedData, newFeature);
+}
+
+// Create a new FeatureSet from transformed data
+var transformedFS = FeatureSet({
+    fields: [
+        { name: 'Quantity', type: 'esriFieldTypeInteger' },
+        { name: 'Revenue', type: 'esriFieldTypeDouble' },
+        { name: 'Permit_Month', type: 'esriFieldTypeString' },
+        { name: 'Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Sort_Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Permit_Year', type: 'esriFieldTypeInteger' },
+        { name: 'Year_Type', type: 'esriFieldTypeString' }
+    ],
+    geometryType: '',
+    features: transformedData
+});
+
+// Sort the FeatureSet for cumulative calculation
+var orderedFS = OrderBy(
+    transformedFS,
+    'Year_Type ASC, Permit_Year DESC, Sort_Month_Number ASC'
+);
+
+// Convert sorted FeatureSet to an array for indexed access
+var dataArray = [];
+for (var f in orderedFS) {
+    Push(dataArray, f);
+}
+
+// Initialize array to store cumulative results
+var result = [];
+
+// Calculate cumulative Quantity and Revenue per year/month grouping
+for (var i = 0; i < Count(dataArray); i++) {
+    var current = dataArray[i];
+
+    var yearType = current["Year_Type"];
+    var permitYear = current["Permit_Year"];
+    var monthNumber = current["Month_Number"];
+
+    // Adjust month number for fiscal year
+    var adjustedMonthNumber = (monthNumber + 6) % 12;
+    if (adjustedMonthNumber == 0) adjustedMonthNumber = 12;
+
+    var cumulativeQuantity = 0;
+    var cumulativeRevenue = 0;
+
+    for (var j = 0; j <= i; j++) {
+        var temp = dataArray[j];
+
+        var tempMonthNumber = temp["Month_Number"];
+        var adjustedTempMonthNumber = (tempMonthNumber + 6) % 12;
+        if (adjustedTempMonthNumber == 0) adjustedTempMonthNumber = 12;
+
+        if (
+            temp["Year_Type"] == yearType &&
+            temp["Permit_Year"] == permitYear &&
+            adjustedTempMonthNumber <= adjustedMonthNumber
+        ) {
+            cumulativeQuantity += Number(temp["Quantity"]);
+            cumulativeRevenue += Number(temp["Revenue"]);
+        }
+    }
+
+    // Store cumulative results
+    Push(result, {
+        attributes: {
+            Year_Type: yearType,
+            Permit_Year: permitYear,
+            Month_Number: monthNumber,
+            Cumulative_Quantity: cumulativeQuantity,
+            Cumulative_Revenue: cumulativeRevenue
+        }
+    });
+}
+
+// Convert results array into a final FeatureSet
+var resultFeatureSet = FeatureSet({
+    fields: [
+        { name: 'Year_Type', type: 'esriFieldTypeString' },
+        { name: 'Permit_Year', type: 'esriFieldTypeInteger' },
+        { name: 'Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Cumulative_Quantity', type: 'esriFieldTypeInteger' },
+        { name: 'Cumulative_Revenue', type: 'esriFieldTypeDouble' }
+    ],
+    geometryType: '',
+    features: result
+});
+
+// Return the cumulative results FeatureSet
+return resultFeatureSet;
+
+------------------------------------------------------------------------------
+Data Expression: YTD Consolidations Building
+Purpose: This code connects to an ArcGIS portal, retrieves building permit
+data, and filters it down to just those permits. It adjusts month values for
+fiscal years, sorts the data, and then calculates cumulative totals (quantity
+and revenue) by permit type, year, and month. The final output is a FeatureSet
+showing cumulative trends, useful for visualizing running totals over time in a
+dashboard or report.
 ------------------------------------------------------------------------------
 // Create a portal connection
 var portal = Portal('https://www.arcgis.com');
 
-// Get feature set from portal item
+// Load the feature layer with selected fields
 var fs = FeatureSetByPortalItem(
     portal,
     'c11047a6104147a1a95b3bd86c1d8057',
@@ -31,145 +198,824 @@ var fs = FeatureSetByPortalItem(
     false
 );
 
-// We only want to include building permits
+// Filter to include only building permits
 var filteredFS = Filter(fs, "Permit_Category = 'Building Permits'");
 
-// Create a new array to store transformed features
+// Array to hold transformed features with adjusted month numbers
 var transformedData = [];
 
-// Iterate through each feature to get the adjusted month number
 for (var f in filteredFS) {
-    
     var sortMonth;
 
     if (f["Year_Type"] == "Fiscal") {
         sortMonth = (f["Month_Number"] + 6) % 12;
-        if (sortMonth == 0) sortMonth = 12;
+        if (sortMonth == 0) sortMonth = 12; // Wraparound correction for December
     } else {
         sortMonth = f["Month_Number"];
     }
 
-    // Add the new adjusted month number
+    // Add the new sorting month to each feature
     var newFeature = {
-        'attributes': {
-            'Permit_Category': f["Permit_Category"],
-            'Permit_Type': f["Permit_Type"],
-            'Quantity': f["Quantity"],
-            'Revenue': f["Revenue"],
-            'Permit_Date': f["Permit_Date"],
-            'Permit_Month': f["Permit_Month"],
-            'Month_Number': f["Month_Number"],
-            'Sort_Month_Number': sortMonth,
-            'Permit_Year': f["Permit_Year"],
-            'Year_Type': f["Year_Type"]
+        attributes: {
+            Permit_Category: f["Permit_Category"],
+            Permit_Type: f["Permit_Type"],
+            Quantity: f["Quantity"],
+            Revenue: f["Revenue"],
+            Permit_Date: f["Permit_Date"],
+            Permit_Month: f["Permit_Month"],
+            Month_Number: f["Month_Number"],
+            Sort_Month_Number: sortMonth,
+            Permit_Year: f["Permit_Year"],
+            Year_Type: f["Year_Type"]
         }
     };
+
     Push(transformedData, newFeature);
 }
 
-// Convert transformed data into a FeatureSet
+// Create a new FeatureSet with the transformed features
 var transformedFS = FeatureSet({
-    'fields': [
-        {'name': 'Permit_Category', 'type': 'esriFieldTypeString'},
-        {'name': 'Permit_Type', 'type': 'esriFieldTypeString'},
-        {'name': 'Quantity', 'type': 'esriFieldTypeInteger'},
-        {'name': 'Revenue', 'type': 'esriFieldTypeDouble'},
-        {'name': 'Permit_Date', 'type': 'esriFieldTypeDate'},
-        {'name': 'Permit_Month', 'type': 'esriFieldTypeString'},
-        {'name': 'Month_Number', 'type': 'esriFieldTypeInteger'},
-        {'name': 'Sort_Month_Number', 'type': 'esriFieldTypeInteger'},
-        {'name': 'Permit_Year', 'type': 'esriFieldTypeInteger'},
-        {'name': 'Year_Type', 'type': 'esriFieldTypeString'}
+    fields: [
+        { name: 'Permit_Category', type: 'esriFieldTypeString' },
+        { name: 'Permit_Type', type: 'esriFieldTypeString' },
+        { name: 'Quantity', type: 'esriFieldTypeInteger' },
+        { name: 'Revenue', type: 'esriFieldTypeDouble' },
+        { name: 'Permit_Date', type: 'esriFieldTypeDate' },
+        { name: 'Permit_Month', type: 'esriFieldTypeString' },
+        { name: 'Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Sort_Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Permit_Year', type: 'esriFieldTypeInteger' },
+        { name: 'Year_Type', type: 'esriFieldTypeString' }
     ],
-    'geometryType': '',
-    'features': transformedData
+    geometryType: '',
+    features: transformedData
 });
 
-// Sort the transformed FeatureSet
-var orderedFS = OrderBy(transformedFS, 
-                    'Year_Type ASC, Permit_Year DESC, Sort_Month_Number ASC');
+// Sort the transformed FeatureSet for cumulative processing
+var orderedFS = OrderBy(
+    transformedFS,
+    'Year_Type ASC, Permit_Year DESC, Sort_Month_Number ASC'
+);
 
-
-// Store sorted features in an array
+// Convert sorted FeatureSet into an array
 var dataArray = [];
 for (var f in orderedFS) {
     Push(dataArray, f);
 }
 
-// Initialize an array for cumulative results
+// Array to store cumulative results
 var result = [];
 
 // Loop through each feature to compute cumulative values
 for (var i = 0; i < Count(dataArray); i++) {
-    
-    var firstItem = dataArray[i];
-    var yearType = firstItem["Year_Type"];
-    var permitYear = firstItem["Permit_Year"];
-    var permitType = firstItem["Permit_Type"];
-    var monthNumber = firstItem["Month_Number"];
+    var current = dataArray[i];
 
-    // Adjust the month number for fiscal year
+    var yearType = current["Year_Type"];
+    var permitYear = current["Permit_Year"];
+    var permitType = current["Permit_Type"];
+    var monthNumber = current["Month_Number"];
+
+    // Adjust month number for fiscal year if applicable
     var adjustedMonthNumber = (monthNumber + 6) % 12;
     if (adjustedMonthNumber == 0) adjustedMonthNumber = 12;
 
-    // Cumulative sum variables
     var cumulativeQuantity = 0;
     var cumulativeRevenue = 0;
 
-    // Loop to calculate cumulative values
+    // Loop back to sum values for all prior months in the same group
     for (var j = 0; j <= i; j++) {
-        var tempFeature = dataArray[j];
-        var tempMonthNumber = tempFeature["Month_Number"];
+        var temp = dataArray[j];
+
+        var tempMonthNumber = temp["Month_Number"];
         var adjustedTempMonthNumber = (tempMonthNumber + 6) % 12;
         if (adjustedTempMonthNumber == 0) adjustedTempMonthNumber = 12;
 
         if (
-            tempFeature["Year_Type"] == yearType &&
-            tempFeature["Permit_Year"] == permitYear &&
-            tempFeature["Permit_Type"] == permitType &&
+            temp["Year_Type"] == yearType &&
+            temp["Permit_Year"] == permitYear &&
+            temp["Permit_Type"] == permitType &&
             adjustedTempMonthNumber <= adjustedMonthNumber
         ) {
-            cumulativeQuantity += Number(tempFeature["Quantity"]);
-            cumulativeRevenue += Number(tempFeature["Revenue"]);
+            cumulativeQuantity += Number(temp["Quantity"]);
+            cumulativeRevenue += Number(temp["Revenue"]);
         }
     }
 
-    // Push cumulative data
+    // Add cumulative record to result
     Push(result, {
-        'attributes': {
-            'Year_Type': yearType,
-            'Permit_Year': permitYear,
-            'Permit_Type': permitType,
-            'Month_Number': monthNumber, // Keep original
-            'Cumulative_Quantity': cumulativeQuantity,
-            'Cumulative_Revenue': cumulativeRevenue
+        attributes: {
+            Year_Type: yearType,
+            Permit_Year: permitYear,
+            Permit_Type: permitType,
+            Month_Number: monthNumber, // Keep original calendar month
+            Cumulative_Quantity: cumulativeQuantity,
+            Cumulative_Revenue: cumulativeRevenue
         }
     });
 }
 
-// Convert result into a FeatureSet
+// Convert cumulative results into a FeatureSet
 var resultFeatureSet = FeatureSet({
+    fields: [
+        { name: 'Year_Type', type: 'esriFieldTypeString' },
+        { name: 'Permit_Year', type: 'esriFieldTypeInteger' },
+        { name: 'Permit_Type', type: 'esriFieldTypeString' },
+        { name: 'Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Cumulative_Quantity', type: 'esriFieldTypeInteger' },
+        { name: 'Cumulative_Revenue', type: 'esriFieldTypeDouble' }
+    ],
+    geometryType: '',
+    features: result
+});
+
+// Return the final FeatureSet
+return resultFeatureSet;
+
+------------------------------------------------------------------------------
+Data Expression: YTD Consolidations Other
+Purpose: This code connects to an ArcGIS portal, retrieves other permit data, 
+and filters it down to just those permits. It adjusts month values for fiscal
+years, sorts the data, and then calculates cumulative totals (quantity and 
+revenue) by permit type, year, and month. The final output is a FeatureSet 
+showing cumulative trends, useful for visualizing running totals over time in a
+dashboard or report.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal('https://www.arcgis.com');
+
+// Load the feature layer with selected fields
+var fs = FeatureSetByPortalItem(
+    portal,
+    'c11047a6104147a1a95b3bd86c1d8057',
+    0,
+    [
+        'Permit_Category',
+        'Permit_Type',
+        'Quantity',
+        'Revenue',
+        'Permit_Date',
+        'Permit_Month',
+        'Month_Number',
+        'Permit_Year',
+        'Year_Type'
+    ],
+    false
+);
+
+// Filter to include only other permits
+var filteredFS = Filter(fs, "Permit_Category = 'Other Permits'");
+
+// Array to hold transformed features with adjusted month numbers
+var transformedData = [];
+
+for (var f in filteredFS) {
+    var sortMonth;
+
+    if (f["Year_Type"] == "Fiscal") {
+        sortMonth = (f["Month_Number"] + 6) % 12;
+        if (sortMonth == 0) sortMonth = 12; // Wraparound correction for December
+    } else {
+        sortMonth = f["Month_Number"];
+    }
+
+    // Add the new sorting month to each feature
+    var newFeature = {
+        attributes: {
+            Permit_Category: f["Permit_Category"],
+            Permit_Type: f["Permit_Type"],
+            Quantity: f["Quantity"],
+            Revenue: f["Revenue"],
+            Permit_Date: f["Permit_Date"],
+            Permit_Month: f["Permit_Month"],
+            Month_Number: f["Month_Number"],
+            Sort_Month_Number: sortMonth,
+            Permit_Year: f["Permit_Year"],
+            Year_Type: f["Year_Type"]
+        }
+    };
+
+    Push(transformedData, newFeature);
+}
+
+// Create a new FeatureSet with the transformed features
+var transformedFS = FeatureSet({
+    fields: [
+        { name: 'Permit_Category', type: 'esriFieldTypeString' },
+        { name: 'Permit_Type', type: 'esriFieldTypeString' },
+        { name: 'Quantity', type: 'esriFieldTypeInteger' },
+        { name: 'Revenue', type: 'esriFieldTypeDouble' },
+        { name: 'Permit_Date', type: 'esriFieldTypeDate' },
+        { name: 'Permit_Month', type: 'esriFieldTypeString' },
+        { name: 'Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Sort_Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Permit_Year', type: 'esriFieldTypeInteger' },
+        { name: 'Year_Type', type: 'esriFieldTypeString' }
+    ],
+    geometryType: '',
+    features: transformedData
+});
+
+// Sort the transformed FeatureSet for cumulative processing
+var orderedFS = OrderBy(
+    transformedFS,
+    'Year_Type ASC, Permit_Year DESC, Sort_Month_Number ASC'
+);
+
+// Convert sorted FeatureSet into an array
+var dataArray = [];
+for (var f in orderedFS) {
+    Push(dataArray, f);
+}
+
+// Array to store cumulative results
+var result = [];
+
+// Loop through each feature to compute cumulative values
+for (var i = 0; i < Count(dataArray); i++) {
+    var current = dataArray[i];
+
+    var yearType = current["Year_Type"];
+    var permitYear = current["Permit_Year"];
+    var permitType = current["Permit_Type"];
+    var monthNumber = current["Month_Number"];
+
+    // Adjust month number for fiscal year if applicable
+    var adjustedMonthNumber = (monthNumber + 6) % 12;
+    if (adjustedMonthNumber == 0) adjustedMonthNumber = 12;
+
+    var cumulativeQuantity = 0;
+    var cumulativeRevenue = 0;
+
+    // Loop back to sum values for all prior months in the same group
+    for (var j = 0; j <= i; j++) {
+        var temp = dataArray[j];
+
+        var tempMonthNumber = temp["Month_Number"];
+        var adjustedTempMonthNumber = (tempMonthNumber + 6) % 12;
+        if (adjustedTempMonthNumber == 0) adjustedTempMonthNumber = 12;
+
+        if (
+            temp["Year_Type"] == yearType &&
+            temp["Permit_Year"] == permitYear &&
+            temp["Permit_Type"] == permitType &&
+            adjustedTempMonthNumber <= adjustedMonthNumber
+        ) {
+            cumulativeQuantity += Number(temp["Quantity"]);
+            cumulativeRevenue += Number(temp["Revenue"]);
+        }
+    }
+
+    // Add cumulative record to result
+    Push(result, {
+        attributes: {
+            Year_Type: yearType,
+            Permit_Year: permitYear,
+            Permit_Type: permitType,
+            Month_Number: monthNumber, // Keep original calendar month
+            Cumulative_Quantity: cumulativeQuantity,
+            Cumulative_Revenue: cumulativeRevenue
+        }
+    });
+}
+
+// Convert cumulative results into a FeatureSet
+var resultFeatureSet = FeatureSet({
+    fields: [
+        { name: 'Year_Type', type: 'esriFieldTypeString' },
+        { name: 'Permit_Year', type: 'esriFieldTypeInteger' },
+        { name: 'Permit_Type', type: 'esriFieldTypeString' },
+        { name: 'Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Cumulative_Quantity', type: 'esriFieldTypeInteger' },
+        { name: 'Cumulative_Revenue', type: 'esriFieldTypeDouble' }
+    ],
+    geometryType: '',
+    features: result
+});
+
+// Return the final FeatureSet
+return resultFeatureSet;
+
+------------------------------------------------------------------------------
+Data Expression: Monthly Consolidations 3 Year History
+Purpose: This Arcade code connects to a feature layer on ArcGIS Online, filters
+the data to include only permits from the last four calendar years, and then 
+groups the results by year, permit type, month, and category. For each group, 
+it calculates the total quantity of permits issued and the total revenue 
+generated. This helps visualize recent trends in permitting activity over time.
+------------------------------------------------------------------------------
+// Connect to ArcGIS Online portal
+var portal = Portal('https://www.arcgis.com');
+
+// Load relevant fields from the feature layer
+var fs = FeatureSetByPortalItem(
+    portal,
+    'c11047a6104147a1a95b3bd86c1d8057',
+    0,
+    [
+        'Permit_Category',
+        'Permit_Type',
+        'Quantity',
+        'Revenue',
+        'Permit_Date',
+        'Permit_Month',
+        'Month_Number',
+        'Permit_Year',
+        'Year_Type'
+    ],
+    false
+);
+
+// Filter to calendar year data only
+var calendarData = Filter(fs, "Year_Type = 'Calendar'");
+
+// Determine year range: latest year and 3 years prior
+var latestYear = Max(calendarData, 'Permit_Year');
+var cutoffYear = latestYear - 3;
+
+// Filter to the last 4 calendar years
+var recentData = Filter(calendarData, 'Permit_Year >= ' + cutoffYear);
+
+// Group by year and permit type, summing quantity and revenue
+return GroupBy(
+    recentData, 
+    ['Year_Type', 'Permit_Year', 'Permit_Type', 'Month_Number', 'Permit_Month',
+     'Permit_Category'],
+    [
+        { name: 'Quantity', expression: 'Quantity', statistic: 'SUM' },
+        { name: 'Revenue', expression: 'Revenue', statistic: 'SUM' }
+    ]
+);
+
+------------------------------------------------------------------------------
+Data Expression: BuildingPermitDataAll Last Three Years
+Purpose: This code retrieves permit data from an ArcGIS Online portal, 
+filters it to include only the last four years, and groups it by year, month,
+property type, and project type. It then calculates the total construction and 
+market valuations for each group. The transformed data is returned as a new 
+feature set.
+------------------------------------------------------------------------------
+// Connect to ArcGIS Online
+var portal = Portal('https://www.arcgis.com');
+
+// Load feature set with required fields
+var fs = FeatureSetByPortalItem(
+    portal,
+    '0caf4a67f236449bb08fefac2986d362',
+    0,
+    [
+        'Record_Number',
+        'Month_Number',
+        'Permit_Month',
+        'Year_Type',
+        'Permit_Year',
+        'Project_Type',
+        'Property_Type',
+        'Units',
+        'Total_Construction_Valuation',
+        'Current_Market_Valuation'
+    ],
+    false
+);
+
+// Determine year range (latest year and 3 years prior)
+var latestYear = Max(fs, 'Permit_Year');
+var cutoffYear = latestYear - 3;
+
+// Filter to data within the last 4 years
+var recentData = Filter(fs, 'Permit_Year >= ' + cutoffYear + ' AND Permit_Year <= ' + latestYear);
+
+// Group by key attributes and calculate summary statistics
+var groupedData = GroupBy(
+    recentData,
+    ['Year_Type', 'Permit_Year', 'Property_Type', 'Month_Number', 'Project_Type'],
+    [
+        { name: 'Quantity', expression: 'Record_Number', statistic: 'COUNT' },
+        { name: 'Construction', expression: 'Total_Construction_Valuation', statistic: 'SUM' },
+        { name: 'Market', expression: 'Current_Market_Valuation', statistic: 'SUM' },
+        { name: 'Units', expression: 'Units', statistic: 'SUM' }
+    ]
+);
+
+// Create transformed dataset with total valuation field
+var transformedData = [];
+for (var f in groupedData) {
+    var totalValuation = f['Market'] + f['Construction'];
+
+    Push(transformedData, {
+        attributes: {
+            Year_Type: f['Year_Type'],
+            Permit_Year: f['Permit_Year'],
+            Month_Number: f['Month_Number'],
+            Property_Type: f['Property_Type'],
+            Project_Type: f['Project_Type'],
+            Quantity: f['Quantity'],
+            Units: f['Units'],
+            Construction: f['Construction'],
+            Market: f['Market'],
+            Total: totalValuation
+        }
+    });
+}
+
+// Convert transformed array into a FeatureSet
+return FeatureSet({
+    fields: [
+        { name: 'Year_Type', type: 'esriFieldTypeString' },
+        { name: 'Permit_Year', type: 'esriFieldTypeInteger' },
+        { name: 'Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Property_Type', type: 'esriFieldTypeString' },
+        { name: 'Project_Type', type: 'esriFieldTypeString' },
+        { name: 'Quantity', type: 'esriFieldTypeInteger' },
+        { name: 'Units', type: 'esriFieldTypeInteger' },
+        { name: 'Construction', type: 'esriFieldTypeDouble' },
+        { name: 'Market', type: 'esriFieldTypeDouble' },
+        { name: 'Total', type: 'esriFieldTypeDouble' }
+    ],
+    geometryType: '',
+    features: transformedData
+});
+
+------------------------------------------------------------------------------
+Data Expression: Monthly All Permits Consolidations
+Purpose: This code connects to the ArcGIS Online portal and retrieves permit 
+data. It groups the data by year, month, and permit type, then calculates the 
+sum of quantity and revenue for each group, returning the aggregated results.
+------------------------------------------------------------------------------
+// Connect to ArcGIS Online portal
+var portal = Portal('https://www.arcgis.com');
+
+// Retrieve feature set with relevant permit data
+var featureSet = FeatureSetByPortalItem(
+    portal,
+    'c11047a6104147a1a95b3bd86c1d8057',
+    0,
+    [
+        'Permit_Category',
+        'Quantity',
+        'Revenue',
+        'Permit_Date',
+        'Permit_Month',
+        'Month_Number',
+        'Permit_Year',
+        'Year_Type'
+    ],
+    false
+);
+
+// Group data by year, month, and permit type, and calculate the sum of quantity and revenue
+return GroupBy(
+    featureSet, 
+    ['Year_Type', 'Permit_Year', 'Month_Number', 'Permit_Month'],
+    [
+        { name: 'Quantity', expression: 'Quantity', statistic: 'SUM' },
+        { name: 'Revenue', expression: 'Revenue', statistic: 'SUM' }
+    ]
+);
+
+------------------------------------------------------------------------------
+Data Expression: Monthly Building Permits Consolidations
+Purpose: This code connects to the ArcGIS Online portal and retrieves a dataset
+of permit-related information. It then groups the data by year, month, and 
+permit type, while calculating aggregated statistics such as the total count 
+of records, the sum of units, and the sum of construction and market valuations
+for each group.
+------------------------------------------------------------------------------
+// Connect to the ArcGIS Online portal
+var portal = Portal('https://www.arcgis.com');
+
+// Retrieve feature set with relevant permit data
+var featureSet = FeatureSetByPortalItem(
+    portal,
+    '0caf4a67f236449bb08fefac2986d362',
+    0,
+    [
+        'Record_Number',
+        'Project_Type',
+        'Property_Type',
+        'Month_Number',
+        'Permit_Year',
+        'Year_Type',
+        'Total_Construction_Valuation',
+        'Current_Market_Valuation',
+        'Units'
+    ],
+    false
+);
+
+// Group data by year and month, and calculate aggregated statistics
+return GroupBy(
+    featureSet, 
+    ['Year_Type', 'Permit_Year', 'Month_Number'],
+    [
+        { name: 'Quantity', expression: 'Record_Number', statistic: 'COUNT' },
+        { name: 'Units', expression: 'Units', statistic: 'SUM' },
+        { name: 'Construction Valuation', expression: 'Total_Construction_Valuation', statistic: 'SUM' },
+        { name: 'Market Valuation', expression: 'Current_Market_Valuation', statistic: 'SUM' }
+    ]
+);
+
+------------------------------------------------------------------------------
+Data Expression: YTD Consolidations Building Permits for Tables
+Purpose: This script retrieves building permit data from an ArcGIS Online 
+portal, groups it by month and project/property type, and adjusts the month 
+values for fiscal year reporting. It then calculates running (cumulative) 
+totals for key metrics—such as units, construction valuation, and market 
+valuation—across the months within each year. The output is a FeatureSet with
+cumulative statistics.
+------------------------------------------------------------------------------
+// Create a portal connection
+var portal = Portal('https://www.arcgis.com');
+
+// Get feature set from portal item with only necessary fields
+var fs = FeatureSetByPortalItem(
+    portal,
+    '0caf4a67f236449bb08fefac2986d362',
+    0,
+    [
+        'Record_Number', 'Year_Type', 'Permit_Year', 'Month_Number',
+        'Project_Type', 'Property_Type', 'Units',
+        'Total_Construction_Valuation', 'Current_Market_Valuation'
+    ],
+    false
+);
+
+// Group the data by year, month, and permit type
+var fs1 = GroupBy(
+    fs,
+    ['Year_Type', 'Permit_Year', 'Month_Number', 'Project_Type', 'Property_Type'],
+    [
+        { name: 'Quantity', expression: 'Record_Number', statistic: 'COUNT' },
+        { name: 'Units', expression: 'Units', statistic: 'SUM' },
+        { name: 'Total_Construction_Valuation', expression: 'Total_Construction_Valuation', statistic: 'SUM' },
+        { name: 'Current_Market_Valuation', expression: 'Current_Market_Valuation', statistic: 'SUM' }
+    ]
+);
+
+// Adjust months for fiscal year and store as transformed data
+var transformedData = [];
+
+for (var f in fs1) {
+    var sortMonth = f["Month_Number"];
+
+    if (f["Year_Type"] == "Fiscal") {
+        sortMonth = (sortMonth + 6) % 12;
+        if (sortMonth == 0) sortMonth = 12;
+    }
+
+    Push(transformedData, {
+        'attributes': {
+            'Year_Type': f["Year_Type"],
+            'Permit_Year': f["Permit_Year"],
+            'Month_Number': f["Month_Number"],
+            'Project_Type': f["Project_Type"],
+            'Property_Type': f["Property_Type"],
+            'Sort_Month_Number': sortMonth,
+            'Quantity': f["Quantity"],
+            'Units': f["Units"],
+            'Total_Construction_Valuation': f["Total_Construction_Valuation"],
+            'Total_Market_Valuation': f["Current_Market_Valuation"]
+        }
+    });
+}
+
+// Convert transformed data into a FeatureSet
+var transformedFS = FeatureSet({
     'fields': [
-        {'name': 'Year_Type', 'type': 'esriFieldTypeString'},
-        {'name': 'Permit_Year', 'type': 'esriFieldTypeInteger'},
-        {'name': 'Permit_Type', 'type': 'esriFieldTypeString'},
-        {'name': 'Month_Number', 'type': 'esriFieldTypeInteger'},
-        {'name': 'Cumulative_Quantity', 'type': 'esriFieldTypeInteger'},
-        {'name': 'Cumulative_Revenue', 'type': 'esriFieldTypeDouble'}
+        { name: 'Year_Type', type: 'esriFieldTypeString' },
+        { name: 'Permit_Year', type: 'esriFieldTypeInteger' },
+        { name: 'Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Project_Type', type: 'esriFieldTypeString' },
+        { name: 'Property_Type', type: 'esriFieldTypeString' },
+        { name: 'Sort_Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Quantity', type: 'esriFieldTypeInteger' },
+        { name: 'Units', type: 'esriFieldTypeInteger' },
+        { name: 'Total_Construction_Valuation', type: 'esriFieldTypeDouble' },
+        { name: 'Total_Market_Valuation', type: 'esriFieldTypeDouble' }
+    ],
+    'geometryType': '',
+    'features': transformedData
+});
+
+// Pre-sort data by year and adjusted month
+var sortedFS = OrderBy(transformedFS, 'Year_Type ASC, Permit_Year DESC, Sort_Month_Number ASC');
+
+// Initialize cumulative tracking structures
+var cumulativeData = {};
+var result = [];
+
+// Loop through sorted features to calculate cumulative values
+for (var f in sortedFS) {
+
+    var key = f["Year_Type"] + "_" + f["Permit_Year"] + "_" + f["Project_Type"] + "_" + f["Property_Type"];
+
+    // Initialize if key not yet seen
+    if (!HasKey(cumulativeData, key)) {
+        cumulativeData[key] = {
+            'Cumulative_Units': 0,
+            'Cumulative_Construction': 0,
+            'Cumulative_Market': 0,
+            'Cumulative_Quantity': 0
+        };
+    }
+
+    // Sum previous months' values (if any)
+    if (f["Sort_Month_Number"] > 1) {
+        var currentMonth = f["Sort_Month_Number"];
+        for (var month = 1; month < currentMonth; month++) {
+            var previousKey = f["Year_Type"] + "_" + f["Permit_Year"] + "_" + f["Project_Type"] + "_" + f["Property_Type"] + "_" + month;
+            if (HasKey(cumulativeData, previousKey)) {
+                cumulativeData[key]['Cumulative_Units'] += cumulativeData[previousKey]['Cumulative_Units'];
+                cumulativeData[key]['Cumulative_Construction'] += cumulativeData[previousKey]['Cumulative_Construction'];
+                cumulativeData[key]['Cumulative_Market'] += cumulativeData[previousKey]['Cumulative_Market'];
+                cumulativeData[key]['Cumulative_Quantity'] += cumulativeData[previousKey]['Cumulative_Quantity'];
+            }
+        }
+    }
+
+    // Update with current month's values
+    cumulativeData[key]['Cumulative_Units'] += Number(f["Units"]);
+    cumulativeData[key]['Cumulative_Construction'] += Number(f["Total_Construction_Valuation"]);
+    cumulativeData[key]['Cumulative_Market'] += Number(f["Total_Market_Valuation"]);
+    cumulativeData[key]['Cumulative_Quantity'] += Number(f["Quantity"]);
+
+    // Store result
+    Push(result, {
+        'attributes': {
+            'Year_Type': f["Year_Type"],
+            'Permit_Year': f["Permit_Year"],
+            'Month_Number': f["Month_Number"],
+            'Project_Type': f["Project_Type"],
+            'Property_Type': f["Property_Type"],
+            'Sort_Month_Number': f["Sort_Month_Number"],
+            'Cumulative_Units': cumulativeData[key]['Cumulative_Units'],
+            'Cumulative_Construction': cumulativeData[key]['Cumulative_Construction'],
+            'Cumulative_Market': cumulativeData[key]['Cumulative_Market'],
+            'Cumulative_Quantity': cumulativeData[key]['Cumulative_Quantity']
+        }
+    });
+}
+
+// Return final FeatureSet with cumulative metrics
+return FeatureSet({
+    'fields': [
+        { name: 'Year_Type', type: 'esriFieldTypeString' },
+        { name: 'Permit_Year', type: 'esriFieldTypeInteger' },
+        { name: 'Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Project_Type', type: 'esriFieldTypeString' },
+        { name: 'Property_Type', type: 'esriFieldTypeString' },
+        { name: 'Sort_Month_Number', type: 'esriFieldTypeInteger' },
+        { name: 'Cumulative_Units', type: 'esriFieldTypeInteger' },
+        { name: 'Cumulative_Construction', type: 'esriFieldTypeDouble' },
+        { name: 'Cumulative_Market', type: 'esriFieldTypeDouble' },
+        { name: 'Cumulative_Quantity', type: 'esriFieldTypeInteger' }
     ],
     'geometryType': '',
     'features': result
 });
 
-// Return final FeatureSet
-return resultFeatureSet;
-
-
-
-
-
-
 ------------------------------------------------------------------------------
-YTD Consolidations Building
+Data Expression: YTD Consolidations Building Permit Data
+Purpose: This code transforms raw permit data into a format that shows how 
+activity—like units, valuations, and counts—builds up month by month within 
+each year. It adjusts months for fiscal years, groups and totals the data, then
+calculates running (cumulative) totals so users can see how permit activity 
+grows over time in charts or dashboards.
 ------------------------------------------------------------------------------
-...
+// Create a portal connection
+var portal = Portal('https://www.arcgis.com');
+
+// Get feature set from portal item with only necessary fields
+var fs = FeatureSetByPortalItem(
+    portal,
+    '0caf4a67f236449bb08fefac2986d362',
+    0,
+    ['Record_Number', 'Month_Number', 'Year_Type', 'Permit_Year', 'Units', 'Total_Construction_Valuation', 'Current_Market_Valuation'],
+    false
+);
+
+// Group by Year Type, Year, and Month with aggregations
+var fs1 = GroupBy(
+    fs, 
+    ['Year_Type', 'Permit_Year', 'Month_Number'],
+    [
+        { name: 'Quantity', expression: 'Record_Number', statistic: 'COUNT' },
+        { name: 'Units', expression: 'Units', statistic: 'SUM' },
+        { name: 'Total_Construction_Valuation', expression: 'Total_Construction_Valuation', statistic: 'SUM' },
+        { name: 'Current_Market_Valuation', expression: 'Current_Market_Valuation', statistic: 'SUM' }
+    ]
+);
+
+// Adjust months for Fiscal Year alignment and create transformed dataset
+var transformedData = [];
+
+for (var f in fs1) {
+    var sortMonth = f["Month_Number"];
+
+    if (f["Year_Type"] == "Fiscal") {
+        sortMonth = (sortMonth + 6) % 12;
+        if (sortMonth == 0) sortMonth = 12; // Correct for modulo behavior
+    }
+
+    Push(transformedData, {
+        'attributes': {
+            'Year_Type': f["Year_Type"],
+            'Permit_Year': f["Permit_Year"],
+            'Month_Number': f["Month_Number"],
+            'Sort_Month_Number': sortMonth,
+            'Quantity': f["Quantity"],
+            'Units': f["Units"],
+            'Total_Construction_Valuation': f["Total_Construction_Valuation"],
+            'Total_Market_Valuation': f["Current_Market_Valuation"]
+        }
+    });
+}
+
+// Convert transformed array into a FeatureSet
+var transformedFS = FeatureSet({
+    'fields': [
+        { 'name': 'Year_Type', 'type': 'esriFieldTypeString' },
+        { 'name': 'Permit_Year', 'type': 'esriFieldTypeInteger' },
+        { 'name': 'Month_Number', 'type': 'esriFieldTypeInteger' },
+        { 'name': 'Sort_Month_Number', 'type': 'esriFieldTypeInteger' },
+        { 'name': 'Quantity', 'type': 'esriFieldTypeInteger' },
+        { 'name': 'Units', 'type': 'esriFieldTypeInteger' },
+        { 'name': 'Total_Construction_Valuation', 'type': 'esriFieldTypeDouble' },
+        { 'name': 'Total_Market_Valuation', 'type': 'esriFieldTypeDouble' }
+    ],
+    'geometryType': '',
+    'features': transformedData
+});
+
+// Sort by adjusted month order within year type and descending year
+var sortedFS = OrderBy(transformedFS, 'Year_Type ASC, Permit_Year DESC, Sort_Month_Number ASC');
+
+// Track cumulative values for each year
+var cumulativeData = {};
+var result = [];
+
+// Iterate through sorted records to compute cumulative sums
+for (var f in sortedFS) {
+
+    var key = f["Year_Type"] + "_" + f["Permit_Year"];
+
+    // Initialize tracking if key not present
+    if (!(HasKey(cumulativeData, key))) {
+        cumulativeData[key] = {
+            'Cumulative_Units': 0,
+            'Cumulative_Construction': 0,
+            'Cumulative_Market': 0,
+            'Cumulative_Quantity': 0
+        };
+    }
+
+    // Accumulate values from earlier months within the same year
+    if (f["Sort_Month_Number"] > 1) {
+        var currentMonth = f["Sort_Month_Number"];
+        for (var month = 1; month < currentMonth; month++) {
+            var previousKey = key + "_" + month;
+
+            if (HasKey(cumulativeData, previousKey)) {
+                cumulativeData[key]['Cumulative_Units'] += cumulativeData[previousKey]['Cumulative_Units'];
+                cumulativeData[key]['Cumulative_Construction'] += cumulativeData[previousKey]['Cumulative_Construction'];
+                cumulativeData[key]['Cumulative_Market'] += cumulativeData[previousKey]['Cumulative_Market'];
+                cumulativeData[key]['Cumulative_Quantity'] += cumulativeData[previousKey]['Cumulative_Quantity'];
+            }
+        }
+    }
+
+    // Add current values to cumulative sums
+    cumulativeData[key]['Cumulative_Units'] += Number(f["Units"]);
+    cumulativeData[key]['Cumulative_Construction'] += Number(f["Total_Construction_Valuation"]);
+    cumulativeData[key]['Cumulative_Market'] += Number(f["Total_Market_Valuation"]);
+    cumulativeData[key]['Cumulative_Quantity'] += Number(f["Quantity"]);
+
+    // Store cumulative values for this feature
+    Push(result, {
+        'attributes': {
+            'Year_Type': f["Year_Type"],
+            'Permit_Year': f["Permit_Year"],
+            'Month_Number': f["Month_Number"],
+            'Sort_Month_Number': f["Sort_Month_Number"],
+            'Cumulative_Units': cumulativeData[key]['Cumulative_Units'],
+            'Cumulative_Construction': cumulativeData[key]['Cumulative_Construction'],
+            'Cumulative_Market': cumulativeData[key]['Cumulative_Market'],
+            'Cumulative_Quantity': cumulativeData[key]['Cumulative_Quantity']
+        }
+    });
+}
+
+// Convert final cumulative dataset into a FeatureSet
+return FeatureSet({
+    'fields': [
+        { 'name': 'Year_Type', 'type': 'esriFieldTypeString' },
+        { 'name': 'Permit_Year', 'type': 'esriFieldTypeInteger' },
+        { 'name': 'Month_Number', 'type': 'esriFieldTypeInteger' },
+        { 'name': 'Sort_Month_Number', 'type': 'esriFieldTypeInteger' },
+        { 'name': 'Cumulative_Units', 'type': 'esriFieldTypeInteger' },
+        { 'name': 'Cumulative_Construction', 'type': 'esriFieldTypeDouble' },
+        { 'name': 'Cumulative_Market', 'type': 'esriFieldTypeDouble' },
+        { 'name': 'Cumulative_Quantity', 'type': 'esriFieldTypeInteger' }
+    ],
+    'geometryType': '',
+    'features': result
+});

@@ -31,13 +31,13 @@ The solution integrates data from the department's SQL database and Excel workbo
    - Completely developed and automated data pipeline, going from raw back-end SQL database tables to data sets rich for visualizations
    - Fully automated visualizations of permit processing times, volumes, and types
    - Public-facing metrics that improve overall transparency and understanding of the permitting process
-   - [Link to dashboard](01%20Building%20Permit%20Metrics/building_permits_dashboard.txt)
+   - [Link to dashboard](01%20Building%20Permit%20Metrics/building_permits_dashboard.md)
 
 2. **Building Permit Operational Insights**:
    - Completely developed and automated data pipeline, going from raw back-end database tables to data sets rich for visualizations
    - Fully automated visualizations of permit processing times, volumes, and types specific to internal, CPDI teams
    - Internal-facing metrics that allow for performance benchmarking against to-be established KPIs
-   - [Link to dashboard](02%20Building%20Permit%20Operational%20Insights/building_permit_operational_insights_dashboard.txt)
+   - [Link to dashboard](02%20Building%20Permit%20Operational%20Insights/building_permit_operational_insights_dashboard.md)
 
 3. **Community Development Snapshots**:
    - Replication of community development monthly, quarterly, and yearly snapshots of permit financials

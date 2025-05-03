@@ -43,7 +43,7 @@ The solution integrates data from the department's SQL database and Excel workbo
    - Replication of community development monthly, quarterly, and yearly snapshots of permit financials
    - Initially developed and partially automated data pipeline, going from audited fiscal year Excel reports to data sets rich for visualizations
    - Consolidated data from multiple years located in a dashboard that empowers community members to find new, longer-term insights about city development
-   - [Link to dashboard](03%20Community%20Development%20Snapshots/community_development_snapshots_dashboard.txt)
+   - [Link to dashboard](03%20Community%20Development%20Snapshots/community_development_snapshots_dashboard.md)
 
 ## Data Sources
 - **SQL Database**: Primary source for building permit data

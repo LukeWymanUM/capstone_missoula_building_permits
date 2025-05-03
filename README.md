@@ -20,8 +20,9 @@ The solution integrates data from the department's SQL database and Excel workbo
 - **[03 Community Development Snapshots](03%20Community%20Development%20Snapshots/)**: Contains notebooks and scripts related to the "Community Development Snapshots" dashboard.
 - **[Deliverables](Deliverables/)**: Contains final project deliverables and documentation.
 - **[Archive](Archive/)**: Contains archived materials and previous versions.
+- **[Permit Data Inventory](Permit%20Data%20Inventory/)**: Contains a catalog of available permit data sources, fields, and their definitions.
 - **[resources](resources/)**: Contains project resources including logos, images, and notes.
-- **three_ps_wyman.txt**: Provides updates on the project.
+- **[three_ps_wyman.txt](three_ps_wyman.txt)**: Provides progress, problems, and plans updates on the project.
 
 ## Data Products
 #### This project delivers three primary data products:
@@ -30,16 +31,19 @@ The solution integrates data from the department's SQL database and Excel workbo
    - Completely developed and automated data pipeline, going from raw back-end SQL database tables to data sets rich for visualizations
    - Fully automated visualizations of permit processing times, volumes, and types
    - Public-facing metrics that improve overall transparency and understanding of the permitting process
+   - [Link to dashboard](01%20Building%20Permit%20Metrics/building_permits_dashboard.txt)
 
 2. **Building Permit Operational Insights**:
    - Completely developed and automated data pipeline, going from raw back-end database tables to data sets rich for visualizations
    - Fully automated visualizations of permit processing times, volumes, and types specific to internal, CPDI teams
    - Internal-facing metrics that allow for performance benchmarking against to-be established KPIs
+   - [Link to dashboard](02%20Building%20Permit%20Operational%20Insights/building_permit_operational_insights_dashboard.txt)
 
 3. **Community Development Snapshots**:
    - Replication of community development monthly, quarterly, and yearly snapshots of permit financials
    - Initially developed and partially automated data pipeline, going from audited fiscal year Excel reports to data sets rich for visualizations
    - Consolidated data from multiple years located in a dashboard that empowers community members to find new, longer-term insights about city development
+   - [Link to dashboard](03%20Community%20Development%20Snapshots/community_development_snapshots_dashboard.txt)
 
 ## Data Sources
 - **SQL Database**: Primary source for building permit data

@@ -125,14 +125,16 @@ My capstone project focused on creating three dashboards that have fundamentally
 - **Fewer Frustrating Calls**: When people can see status online, they don't need to call and ask what's happening
 - **Community Involvement**: Residents can see development patterns in their neighborhoods and participate more meaningfully in planning discussions
 
-I've made sure the system can grow and adapt over time. The modular design will let the CPDI team make improvements and possibly expand the approach to other city departments as needs evolve.
+I've made sure the system can grow and adapt over time. The modular design will let the CPDI team make improvements and possibly expand the approach as needs evolve.
 
 ## Acknowledgements
 
-This project would not have been possible without the support and collaboration of:
+I would like to thank everyone who supported this project:
 
-- City of Missoula Community Planning, Development & Innovation Department
-- University of Montana College of Business faculty and advisors
-- The GIS and data teams who provided technical expertise and access to the data
+The City of Missoula CPDI team for their collaboration, data access, and technical guidance throughout the project.
 
-I'm especially grateful to the CPDI staff who sat through countless meetings with me, tested early versions, and gave the honest feedback that made these dashboards actually useful in the real world.
+The University of Montana College of Business faculty who provided valuable direction and feedback.
+
+The GIS team whose expertise was instrumental in implementing the visualization components.
+
+A special thanks to all on the project team who participated in weekly meetings and providing feedback, which significantly improved the final product.

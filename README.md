@@ -137,4 +137,4 @@ The University of Montana College of Business faculty who provided valuable dire
 
 The GIS team whose expertise was instrumental in implementing the visualization components.
 
-A special thanks to all on the project team who participated in weekly meetings and providing feedback, which significantly improved the final product.
+I'd like to extend a special thank you to the entire project team for their active participation in our weekly meetings. The consistent and valuable feedback shared during these meetings was instrumental in shaping the project's outcome.

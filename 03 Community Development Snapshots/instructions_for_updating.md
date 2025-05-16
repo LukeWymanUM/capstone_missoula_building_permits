@@ -45,7 +45,7 @@ The Python processing script looks for Excel workbooks in the `./data` directory
 
 July marks the beginning of a new fiscal year, so in August (when July's data is processed), you'll be adding a completely new workbook. When this happens, simply add the new fiscal year workbook to the `./data` folder alongside previous years' workbooks. This allows the script to process data across multiple fiscal years.
 
-For example, when adding FY26 data for the first time, you'll place the "FY25 Development Report Workbook.xlsx" file in the data folder while keeping the FY25 workbook in place.
+For example, when adding FY26 data for the first time, you'll place the "FY26 Development Report Workbook.xlsx" file in the data folder while keeping the FY25 workbook in place.
 
 ### For Updating Existing Workbooks:
 
